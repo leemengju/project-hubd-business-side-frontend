@@ -4,13 +4,11 @@ import Heading from "./Heading";
 
 const AppLayout = () => {
   return (
-    <section className="w-[1920px] overflow-scroll ">
-      <aside>
+    <section className="font-lexend w-[1920px] h-[1080px] flex justify-center items-center p-5">
         <SideBar />
-      </aside>
-      <section className="flex flex-col gap-[17px]">
+      <section className="w-[1520px] h-[1040px] flex flex-col flex-1 px-5">
         <Heading />
-        <main className="w-[1520px] h-[934px]">
+        <main className="w-full h-[937px] px-5">
           <Outlet />
         </main>
       </section>

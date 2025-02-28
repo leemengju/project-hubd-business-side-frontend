@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "../layouts/AppLayout";
-import LoginLayout from "../layouts/LoginLayout"
+import LoginLayout from "../layouts/LoginLayout";
 import Member from "../views/Member";
 import Home from "../views/Home";
 import ProdsAndStore from "../views/ProdsAndStore";
@@ -8,10 +8,9 @@ import CashFlow from "../views/CashFlow";
 import Marketing from "../views/Marketing";
 import Order from "../views/Order";
 import Setting from "../views/Setting";
-import Login from "../views/auth/Login"
-// 新增 import
+import Login from "../views/auth/Login";
+// 1. 新增 import
 // ex: import Register from "../views/auth/Register"
-
 
 // 這支檔案負責管理所有的前端路由
 const AppRouter = () => {
@@ -30,10 +29,10 @@ const AppRouter = () => {
         </Route>
 
         {/* 這是 登入／註冊 頁們的基底模板 */}
-        <Route path="login" element={LoginLayout}>
-          {/* Leo 要在這邊新增註冊、忘記密碼等等路由 */}
+        <Route path="login" element={<LoginLayout />}>
           <Route index element={<Login />}></Route>
-          {/* ex: <Route path="register" element={<Rieister />}></Route> */}
+          {/* 2. 新增路由 */}
+          {/* ex: <Route path="register" element={<Register />}></Route> */}
         </Route>
       </Routes>
     </BrowserRouter>
