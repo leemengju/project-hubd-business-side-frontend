@@ -1,40 +1,45 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import AppLayout from "../layouts/AppLayout";
 import LoginLayout from "../layouts/LoginLayout";
-import Member from "../views/Member";
-import Home from "../views/Home";
-import ProdsAndStore from "../views/ProdsAndStore";
-import CashFlow from "../views/CashFlow";
-import Marketing from "../views/Marketing";
-import Order from "../views/Order";
-import Setting from "../views/Setting";
-import Login from "../views/auth/Login";
-// 1. 新增 import
-// ex: import Register from "../views/auth/Register"
 
-// 這支檔案負責管理所有的前端路由
+// Code Splitting，減少JS初次載入大小
+const Member = lazy(() => import("../views/Member"));
+const Home = lazy(() => import("../views/Home"));
+const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
+const CashFlow = lazy(() => import("../views/CashFlow"));
+const Marketing = lazy(() => import("../views/Marketing"));
+const Order = lazy(() => import("../views/Order"));
+const Setting = lazy(() => import("../views/Setting"));
+const Login = lazy(() => import("../views/auth/Login"));
+// const Register = lazy(() => import("../views/auth/Register"));
+
+// Loading 畫面（避免白屏）
+const Loading = () => <div>Loading...</div>;
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* 這是有 sidebar 的基底模板 */}
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Home />}></Route>
-          <Route path="prods-and-store" element={<ProdsAndStore />}></Route>
-          <Route path="cash-flow" element={<CashFlow />}></Route>
-          <Route path="member" element={<Member />}></Route>
-          <Route path="marketing" element={<Marketing />}></Route>
-          <Route path="order" element={<Order />}></Route>
-          <Route path="setting" element={<Setting />}></Route>
-        </Route>
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          {/* 這是有 sidebar 的基底模板 */}
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Home />} />
+            <Route path="prods-and-store" element={<ProdsAndStore />} />
+            <Route path="cash-flow" element={<CashFlow />} />
+            <Route path="member" element={<Member />} />
+            <Route path="marketing" element={<Marketing />} />
+            <Route path="order" element={<Order />} />
+            <Route path="setting" element={<Setting />} />
+          </Route>
 
-        {/* 這是 登入／註冊 頁們的基底模板 */}
-        <Route path="login" element={<LoginLayout />}>
-          <Route index element={<Login />}></Route>
-          {/* 2. 新增路由 */}
-          {/* ex: <Route path="register" element={<Register />}></Route> */}
-        </Route>
-      </Routes>
+          {/* 這是 登入／註冊 頁們的基底模板 */}
+          <Route path="login" element={<LoginLayout />}>
+            <Route index element={<Login />} />
+            {/* <Route path="register" element={<Register />} /> */}
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 };

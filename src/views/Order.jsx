@@ -1,3 +1,6 @@
+// lazyloading 圖片懶加載
+// <img src="" alt="" loading="lazy" />
+
 const Order = () => {
     return (
       <section className="w-full h-full bg-brandBlue-lightHover">
