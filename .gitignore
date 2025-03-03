@@ -22,7 +22,6 @@ auth.json
 .phpunit.result.cache
 
 # npm / yarn / pnpm
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 npm-debug.log
