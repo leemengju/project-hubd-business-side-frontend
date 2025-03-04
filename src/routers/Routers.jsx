@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import AppLayout from "../layouts/AppLayout";
-import LoginLayout from "../layouts/LoginLayout";
+import Auth from "../layouts/Auth";
+
 
 // Code Splitting，減少JS初次載入大小
 const Member = lazy(() => import("../views/Member"));
@@ -12,7 +13,8 @@ const Marketing = lazy(() => import("../views/Marketing"));
 const Order = lazy(() => import("../views/Order"));
 const Setting = lazy(() => import("../views/Setting"));
 const Login = lazy(() => import("../views/auth/Login"));
-// const Register = lazy(() => import("../views/auth/Register"));
+const Register = lazy(() => import("../views/auth/Register"));
+
 
 // Loading 畫面（避免白屏）
 const Loading = () => <div>Loading...</div>;
@@ -22,7 +24,7 @@ const AppRouter = () => {
     <BrowserRouter>
       <Suspense fallback={<Loading />}>
         <Routes>
-          {/* 這是有 sidebar 的基底模板 */}
+          {/* 這是 有sidebar 的基底模板 */}
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Home />} />
             <Route path="prods-and-store" element={<ProdsAndStore />} />
@@ -34,9 +36,9 @@ const AppRouter = () => {
           </Route>
 
           {/* 這是 登入／註冊 頁們的基底模板 */}
-          <Route path="login" element={<LoginLayout />}>
-            <Route index element={<Login />} />
-            {/* <Route path="register" element={<Register />} /> */}
+          <Route path="auth" element={<Auth />}>
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
           </Route>
         </Routes>
       </Suspense>
