@@ -1,14 +1,20 @@
-// lazyloading 圖片懶加載
-// <img src="" alt="" loading="lazy" />
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ProdsAndStore = () => {
-    return (
-      <section className="w-full h-full bg-brandBlue-lightHover">
-        <p className="text-2xl">這裡是我們的編輯範圍</p>
-        <br />
-        <p className="text-2xl">這裡是商品與賣場</p>
-      </section>
-    );
-  };
-  
-  export default ProdsAndStore
+  return (
+    <section className="w-full h-full bg-brandBlue-lightHover">
+      <Tabs defaultValue="account" className="w-[400px]">
+        <TabsList>
+          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="password">Password</TabsTrigger>
+        </TabsList>
+        <TabsContent value="account">
+          Make changes to your account here.
+        </TabsContent>
+        <TabsContent value="password">Change your password here.</TabsContent>
+      </Tabs>
+    </section>
+  );
+};
+
+export default ProdsAndStore;
