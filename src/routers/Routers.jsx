@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import AppLayout from "../layouts/AppLayout";
-import LoginLayout from "../layouts/LoginLayout";
+import Auth from "../layouts/Auth";
 
 // Code Splitting，減少JS初次載入大小
 const Member = lazy(() => import("../views/Member"));
@@ -34,7 +34,7 @@ const AppRouter = () => {
           </Route>
 
           {/* 這是 登入／註冊 頁們的基底模板 */}
-          <Route path="login" element={<LoginLayout />}>
+          <Route path="login" element={<Auth />}>
             <Route index element={<Login />} />
             {/* <Route path="register" element={<Register />} /> */}
           </Route>

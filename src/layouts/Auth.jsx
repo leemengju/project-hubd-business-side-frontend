@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 
-const LoginLayout = () => {
+const Auth = () => {
   return (
     <div className="font-lexend w-[1920px] h-[1080px]">
         <Outlet />
@@ -8,4 +8,4 @@ const LoginLayout = () => {
   );
 };
 
-export default LoginLayout;
+export default Auth;
