@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import DocumentIcon from "../component/icon";
 import SearchButton, { ExportButton } from "../component/button";
-import FilterGroup from "../component/filterGroup";
 import axios from 'axios';
 
 
@@ -59,41 +58,42 @@ const Order = () => {
     }
   }, [selectedOrder]);
   // <---------------------------篩選欄位__抓資料、輸入資料、搜尋資料----------------------->
-  // useEffect(() => {
-  //   const fetchOrders = async () => {
-  //       try {
-  //           const result = await axios.get("http://localhost:8000/api/order");
-  //           setOrderList(result.data);
-  //           setFilteredOrders(result.data);
-  //       } catch (error) {
-  //           console.error("Error fetching orders:", error);
-  //       }
-  //   };
-  //   fetchOrders();
-  // }, []);
+  useEffect(() => {
+    const fetchOrders = async () => {
+        try {
+            const result = await axios.get("http://localhost:8000/api/order");
+            setOrderList(result.data);
+            setFilteredOrders(result.data);
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+        }
+    };
+    fetchOrders();
+  }, []);
 
-  // const handleInputChange = (field, value) => {
-  //   setFilters(prevFilters => ({
-  //       ...prevFilters,
-  //       [field]: value
-  //   }));
-  // };
+  const handleInputChange = (field, value) => {
+    setFilters(prevFilters => ({
+        ...prevFilters,
+        [field]: value
+    }));
+  };
 
-  // const handleSearch = () => {
-  //   const filtered = orderList.filter(order => {
-  //       return (
-  //           (!filters.orderId || order.order_id.includes(filters.orderId)) &&
-  //           (!filters.tradeStatus || order.trade_status === filters.tradeStatus) &&
-  //           (!filters.startDate || new Date(order.trade_Date) >= new Date(filters.startDate)) &&
-  //           (!filters.endDate || new Date(order.trade_Date) <= new Date(filters.endDate))
-  //       );
-  //   });
-  //   setFilteredOrders(filtered);
-  // };
+  const handleSearch = () => {
+    const filtered = orderList.filter(order => {
+        return (
+            (!filters.orderId || order.order_id.includes(filters.orderId)) &&
+            (!filters.tradeStatus || order.trade_status === filters.tradeStatus) &&
+            (!filters.startDate || new Date(order.trade_Date) >= new Date(filters.startDate)) &&
+            (!filters.endDate || new Date(order.trade_Date) <= new Date(filters.endDate))
+        );
+    });
+    setFilteredOrders(filtered);
+  };
 
 
 
   // // <-----------------------------------function，open&closepopup__v2------------------------------------------>
+  // // <-----------------------------------才能把order的detail傳進去------------------------------------------>
   const openPopup = (order) => {
     if (!order) return;
     setSelectedOrder(order);
@@ -175,42 +175,34 @@ const Order = () => {
 
                 <SearchButton onClick={handleSearch} />
             </section> */}
-      <section className="searchRow w-full mt-5 searchFilter flex py-5 bg-white max-md:flex-wrap max-sm:flex-col">
-        <FilterGroup
-          label="訂單編號"
-          value={filters.orderId}
-          type="text"
-          className="w-[366px] max-sm:w-full"
-
-        />
-
-        <FilterGroup
-          label="交易狀態"
-          value={filters.tradeStatus}
-          type="dropdown"
-          className="w-[365px] max-sm:w-full"
-
-        />
-
-        <FilterGroup
-          label="起始日期"
-          value={filters.startDate}
-          type="date"
-          className="w-[365px] max-sm:w-full"
-
-        />
-
-        <FilterGroup
-          label="結束日期"
-          value={filters.endDate}
-          type="date"
-          className="w-[365px] max-sm:w-full"
-
-        />
-
-        <SearchButton />
-      </section>
-
+     
+            <section className="searchRow w-full mt-5 searchFilter flex py-5 bg-white max-md:flex-wrap max-sm:flex-col">
+                <fieldset className=" flex gap-2.5 justify-between items-center px-6  py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
+                    <legend className="text-md font-medium text-zinc-700">訂單編號</legend>
+                    <input type="text" value={filters.orderId} onChange={e => handleInputChange("orderId", e.target.value)} />
+                </fieldset>
+                
+                <fieldset className="flex gap-2.5 justify-between items-center px-6 py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
+                    <legend className="text-md font-medium text-zinc-700">交易狀態</legend>
+                    <select className="w-[300px]" value={filters.tradeStatus} onChange={e => handleInputChange("tradeStatus", e.target.value)}>
+                        <option className="py-2" value="全部">全部</option>
+                        <option className="py-2" value="交易成功">交易成功</option>
+                        <option className="py-2" value="交易失敗">交易失敗</option>
+                    </select>
+                </fieldset>
+                
+                <fieldset className="flex gap-2.5 justify-between items-center px-6 py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
+                    <legend className="text-md font-medium text-zinc-700">起始日期</legend>
+                    <input className="w-[300px] h-[40px]" type="date" value={filters.startDate} onChange={e => handleInputChange("startDate", e.target.value)} />
+                </fieldset>
+                
+                <fieldset className="flex gap-2.5 justify-between items-center px-6 py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
+                    <legend className="text-md font-medium text-zinc-700">終止日期</legend>
+                    <input className="w-[300px] h-[40px]" type="date" value={filters.endDate} onChange={e => handleInputChange("endDate", e.target.value)} />
+                </fieldset>
+                
+                <SearchButton onClick={handleSearch} />
+            </section>
 
 
       <section
@@ -263,7 +255,7 @@ const Order = () => {
         </header>
 
         {/* <!-- Table Row --> */}
-        {orderList.map((orderData) => (
+        {filteredOrders.map((orderData) => (
           <article
             key={orderData.order_id}
             className="grid p-4 border-b border-solid border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"
@@ -299,6 +291,42 @@ const Order = () => {
             </div>
           </article>
         ))}
+        {/* {orderList.map((orderData) => (
+          <article
+            key={orderData.order_id}
+            className="grid p-4 border-b border-solid border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"
+          >
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.order_id}
+            </p>
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.trade_No}
+            </p>
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.trade_Date}
+            </p>
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.member_id}
+            </p>
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.total_price_with_discount}
+            </p>
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.payment_type}
+            </p>
+            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
+              {orderData.trade_status}
+            </p>
+            <div className="flex gap-2 text-base font-medium flex justify-center text-neutral-700 max-md:px-0 max-md:py-2.5 max-sm:justify-start">
+              <button onClick={() => openPopup(orderData)} className="point-cursor" aria-label="View order details">
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="action-icon">
+                  <path d="M21.1303 10.253C22.2899 11.4731 22.2899 13.3267 21.1303 14.5468C19.1745 16.6046 15.8155 19.3999 12 19.3999C8.18448 19.3999 4.82549 16.6046 2.86971 14.5468C1.7101 13.3267 1.7101 11.4731 2.86971 10.253C4.82549 8.19524 8.18448 5.3999 12 5.3999C15.8155 5.3999 19.1745 8.19523 21.1303 10.253Z" stroke="#484848" strokeWidth="1.5"></path>
+                  <path d="M15 12.3999C15 14.0568 13.6569 15.3999 12 15.3999C10.3431 15.3999 9 14.0568 9 12.3999C9 10.743 10.3431 9.3999 12 9.3999C13.6569 9.3999 15 10.743 15 12.3999Z" stroke="#484848" strokeWidth="1.5"></path>
+                </svg>
+              </button>
+            </div>
+          </article>
+        ))} */}
 
 
         {/* <!-- Table Footer --> */}
@@ -367,7 +395,7 @@ const Order = () => {
             <div className="space-y-2 text-sm">
               {orderDetails.length > 0 ? (
                 orderDetails.map((detail, index) => (
-                  <React.Fragment> 
+                  <React.Fragment>
                     <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">商品名稱:</span><span>{detail.product_name || "N/A"}</span></div>
                     <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">顏色:</span><span> {detail.product_color}</span></div>
                     <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">尺寸:</span><span>{detail.product_size}</span></div>
@@ -388,7 +416,7 @@ const Order = () => {
           </div>
         </div>
       )}
-{/* <---------------------------------orginal_popup-----------------------------------> */}
+      {/* <---------------------------------orginal_popup-----------------------------------> */}
       {/* {isPopupOpen && (
         <div ref={popupRef} className="popup hidden fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50">
 
