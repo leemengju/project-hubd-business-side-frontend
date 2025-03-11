@@ -3,7 +3,6 @@ import { lazy, Suspense } from "react";
 import AppLayout from "../layouts/AppLayout";
 import Auth from "../layouts/Auth";
 
-
 // Code Splitting，減少JS初次載入大小
 const Member = lazy(() => import("../views/Member"));
 const Home = lazy(() => import("../views/Home"));
@@ -11,6 +10,7 @@ const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
 const CashFlow = lazy(() => import("../views/CashFlow"));
 const Marketing = lazy(() => import("../views/Marketing"));
 const Order = lazy(() => import("../views/Order"));
+const OrderTest = lazy(() => import("../views/Order_test"));
 const Setting = lazy(() => import("../views/Setting"));
 const Login = lazy(() => import("../views/auth/Login"));
 const Register = lazy(() => import("../views/auth/Register"));
@@ -32,7 +32,9 @@ const AppRouter = () => {
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
             <Route path="order" element={<Order />} />
+            <Route path="order_test" element={<OrderTest />} />
             <Route path="setting" element={<Setting />} />
+           
           </Route>
 
           {/* 這是 登入／註冊 頁們的基底模板 */}
