@@ -6,96 +6,118 @@ import banner3 from "../assets/images/store/banner3.JPG";
 
 const Store = () => {
   const [activeTab, setActiveTab] = useState("product");
+  const [blocks, setBlocks] = useState([
+    {
+      id: 1,
+      image: banner1,
+      title: "【 New 】＋寶石吊墜課程＋",
+      description:
+        "比百變怪還百變的課程來了，快快呼朋引伴手牽手一起來 364 把屬於自己的吊墜帶回家吧！",
+      link: "https://www.figma.com/design/5iQ3ObMVlGgy7vlcAc3im5/",
+      isEditing: false,
+    },
+    {
+      id: 2,
+      image: banner2,
+      title: "【 Special 】＋手作花藝課程＋",
+      description: "手作花藝課程，讓你的生活增添一份優雅與浪漫。",
+      link: "https://www.figma.com/design/xxxxxx/",
+      isEditing: false,
+    },
+    {
+      id: 3,
+      image: banner3,
+      title: "【 Hot 】＋手工皮革工作坊＋",
+      description: "探索皮革的魅力，手工製作屬於自己的專屬配件。",
+      link: "https://www.figma.com/design/yyyyyy/",
+      isEditing: false,
+    },
+  ]);
 
-  const [isEditing, setIsEditing] = useState(false);
-  git 
+  const [errors, setErrors] = useState({});
 
-  // 可編輯內容
-  const [formData, setFormData] = useState({
-    title: "【 New 】＋寶石吊墜課程＋",
-    description:
-      "比百變怪還百變的課程來了，快快呼朋引伴手牽手一起來 364 把屬於自己的吊墜帶回家吧！",
-    link: "https://www.figma.com/design/5iQ3ObMVlGgy7vlcAc3im5/",
-  });
-
-  // 存儲原始資料 (取消時還原)
-  const [originalData, setOriginalData] = useState(formData);
-
-  // 錯誤狀態
-  const [errors, setErrors] = useState({
-    title: "",
-    description: "",
-    link: "",
-  });
-
-  // 處理輸入變更
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-
-    // 檢查字數並更新錯誤訊息
-    validateField(e.target.name, e.target.value);
+  // 更新欄位內容
+  const handleChange = (id, field, value) => {
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) =>
+        block.id === id ? { ...block, [field]: value } : block
+      )
+    );
+    validateField(id, field, value);
   };
 
-  // 檢查欄位是否符合條件
-  const validateField = (fieldName, value) => {
+  // 驗證標題與描述
+  const validateField = (id, field, value) => {
     let newErrors = { ...errors };
-
-    if (fieldName === "title") {
-      newErrors.title =
-        value.trim() === ""
-          ? "標題不可為空"
-          : value.length > 15
-          ? "標題最多15字元"
-          : "";
-    } else if (fieldName === "description") {
-      newErrors.description =
-        value.trim() === ""
-          ? "圖片說明不可為空"
-          : value.length > 30
-          ? "說明最多30字元"
-          : "";
-    } else if (fieldName === "link") {
-      newErrors.link = value.trim() === "" ? "連結不可為空" : "";
+    if (field === "title") {
+      newErrors[id] = {
+        ...newErrors[id],
+        title:
+          value.trim() === ""
+            ? "請輸入標題"
+            : value.length > 15
+            ? "最多15字元"
+            : "",
+      };
+    } else if (field === "description") {
+      newErrors[id] = {
+        ...newErrors[id],
+        description:
+          value.trim() === ""
+            ? "請輸入說明"
+            : value.length > 30
+            ? "最多30字元"
+            : "",
+      };
+    } else if (field === "link") {
+      newErrors[id] = {
+        ...newErrors[id],
+        link: value.trim() === "" ? "請輸入連結" : "",
+      };
     }
-
     setErrors(newErrors);
   };
 
-  // 進入編輯模式
-  const handleEdit = () => {
-    setOriginalData(formData);
-    setIsEditing(true);
+  // 切換編輯模式
+  const handleEdit = (id) => {
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) =>
+        block.id === id ? { ...block, isEditing: true } : block
+      )
+    );
   };
 
-  // 取消編輯，恢復原始數據
-  const handleCancel = () => {
-    setFormData(originalData);
-    setErrors({ title: "", description: "", link: "" });
-    setIsEditing(false);
+  // 取消編輯
+  const handleCancel = (id) => {
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) =>
+        block.id === id ? { ...block, isEditing: false } : block
+      )
+    );
   };
 
-  // 確定儲存
-  const handleSave = () => {
-    // 逐項檢查欄位
-    validateField("title", formData.title);
-    validateField("description", formData.description);
-    validateField("link", formData.link);
-
-    // 如果有錯誤，阻止儲存
-    if (errors.title || errors.description || errors.link) {
+  // 確定編輯
+  const handleSave = (id) => {
+    if (errors[id]?.title || errors[id]?.description || errors[id]?.link) {
       return;
     }
-
-    // 儲存成功
-    setIsEditing(false);
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) =>
+        block.id === id ? { ...block, isEditing: false } : block
+      )
+    );
   };
 
   // 處理圖片上傳
-  const handleImageUpload = (event) => {
+  const handleImageUpload = (id, event) => {
     const file = event.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setSelectedImage(imageUrl);
+      setBlocks((prevBlocks) =>
+        prevBlocks.map((block) =>
+          block.id === id ? { ...block, image: imageUrl } : block
+        )
+      );
     }
   };
 
@@ -150,137 +172,162 @@ const Store = () => {
         )}
         {activeTab === "store" && (
           <div className="flex justify-start items-center h-full gap-10">
-            {/* 區塊1 */}
-            <div className="w-[480px] h-full border-2 border-brandBlue-light rounded-lg px-[32px] py-5 flex flex-col justify-start items-center gap-5">
-              {/* 標題 */}
-              <div className="w-full h-[44px] text-brandGray-normal flex justify-start items-start gap-5">
-                <div className="flex flex-col justify-start items-start gap-1">
-                  <p>圖片名稱：</p>
-                  {errors.title && (
-                    <p className="text-[12px] text-brandRed-normal">
-                      {errors.title}
-                    </p>
-                  )}
-                </div>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    className="border border-gray-300 px-2 py-1 rounded w-[290px]"
-                  />
-                ) : (
-                  <p className="flex justify-start items-start text-brandBlue-normal">
-                    {formData.title}
-                  </p>
-                )}
-              </div>
-
-              {/* 圖片區塊，進入編輯模式時顯示遮罩 */}
-              <div className="relative w-full h-[330px]">
-                <img
-                  src={selectedImage}
-                  alt="Banner"
-                  className="w-full h-full object-cover"
-                />
-                {isEditing && (
-                  <>
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center text-white text-sm">
-                      <label htmlFor="imageUpload" className="cursor-pointer">
-                        點擊變更圖片（尺寸 720*600 px）
-                      </label>
-                    </div>
-                    <input
-                      type="file"
-                      id="imageUpload"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* 圖片說明 */}
-              <div className="w-[416px] h-[90px] flex justify-center items-start">
-                <div className="w-[110px] h-full flex flex-col justify-start items-start gap-1">
-                  <p>圖片說明：</p>
-                  {errors.description && (
-                    <p className="text-[12px] text-brandRed-normal">
-                      {errors.description}
-                    </p>
-                  )}
-                </div>
-                <div className="w-[290px] h-full flex justify-start items-start text-[14px] text-brandBlue-normal">
-                  {isEditing ? (
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      className="border border-gray-300 px-2 py-1 rounded w-full h-full"
-                    />
-                  ) : (
-                    <p className="w-full">{formData.description}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* 圖片連結 */}
-              <div className="w-[416px] h-[68px] flex justify-center items-start">
-                <div className="w-[110px] h-full flex flex-col justify-start items-start gap-3">
-                  <p>圖片連結：</p>
-                  {errors.link && (
-                    <p className="text-[12px] text-brandRed-normal">
-                      {errors.link}
-                    </p>
-                  )}
-                </div>
-                <div className="w-[290px] h-full flex justify-start items-start break-words text-wrap text-[14px] text-brandBlue-normal">
-                  {isEditing ? (
+            {blocks.map((block) => (
+              <div
+                key={block.id}
+                className="w-[480px] h-full border-2 border-brandBlue-light rounded-lg px-[32px] py-5 flex flex-col justify-start items-center gap-5"
+              >
+                {/* 標題 */}
+                <div className="w-full h-[44px] text-brandGray-normal flex justify-start items-start gap-5">
+                  <div className="flex flex-col justify-start items-start gap-1">
+                    <p>圖片名稱：</p>
+                    {errors[block.id]?.title && (
+                      <p className="text-[12px] text-brandRed-normal">
+                        {errors[block.id]?.title}
+                      </p>
+                    )}
+                  </div>
+                  {block.isEditing ? (
                     <input
                       type="text"
-                      name="link"
-                      value={formData.link}
-                      onChange={handleChange}
-                      className="border border-gray-300 px-2 py-1 rounded w-full"
+                      name="title"
+                      value={block.title}
+                      onChange={(e) =>
+                        handleChange(block.id, "title", e.target.value)
+                      }
+                      className="border border-gray-300 px-2 py-1 rounded w-[290px]"
                     />
                   ) : (
-                    <p className="w-full">{formData.link}</p>
+                    <p className="flex justify-start items-start text-brandBlue-normal">
+                      {block.title}
+                    </p>
+                  )}
+                </div>
+
+                {/* 圖片區塊，進入編輯模式時顯示遮罩 */}
+                <div className="relative w-full h-[330px]">
+                  <img
+                    src={block.image}
+                    alt="Banner"
+                    className="w-full h-full object-cover"
+                  />
+                  {block.isEditing && (
+                    <>
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center text-white text-sm">
+                        <label
+                          htmlFor={`imageUpload-${block.id}`}
+                          className="cursor-pointer inline-flex flex-col justify-center items-center gap-1"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="80"
+                            height="80"
+                            viewBox="0 0 32 32"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M16 7c-2.648 0-4.95 1.238-6.594 3.063C9.27 10.046 9.148 10 9 10c-2.2 0-4 1.8-4 4c-1.73 1.055-3 2.836-3 5c0 3.3 2.7 6 6 6h5v-2H8c-2.219 0-4-1.781-4-4a4.01 4.01 0 0 1 2.438-3.688l.687-.28l-.094-.75A6 6 0 0 1 7 14a1.984 1.984 0 0 1 2.469-1.938l.625.157l.375-.5A7 7 0 0 1 16 9c3.277 0 6.012 2.254 6.781 5.281l.188.781l.843-.03c.211-.012.258-.032.188-.032c2.219 0 4 1.781 4 4s-1.781 4-4 4h-5v2h5c3.3 0 6-2.7 6-6c0-3.156-2.488-5.684-5.594-5.906C23.184 9.574 19.926 7 16 7m0 8l-4 4h3v8h2v-8h3z"
+                            />
+                          </svg>
+                          <span>點擊變更圖片</span>
+                          <span>（建議尺寸 720 * 600 像素）</span>
+                        </label>
+                      </div>
+                      <input
+                        type="file"
+                        id={`imageUpload-${block.id}`}
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(block.id, e)}
+                        className="hidden"
+                      />
+                    </>
+                  )}
+                </div>
+
+                {/* 圖片說明 */}
+                <div className="w-[416px] h-[90px] flex justify-center items-start">
+                  <div className="w-[110px] h-full flex flex-col justify-start items-start gap-1">
+                    <p>圖片說明：</p>
+                    {errors[block.id]?.description && (
+                      <p className="text-[12px] text-brandRed-normal">
+                        {errors[block.id]?.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="w-[290px] h-full flex justify-start items-start text-[14px] text-brandBlue-normal">
+                    {block.isEditing ? (
+                      <textarea
+                        name="description"
+                        value={block.description}
+                        onChange={(e) =>
+                          handleChange(block.id, "description", e.target.value)
+                        }
+                        className="border border-gray-300 px-2 py-1 rounded w-full h-full"
+                      />
+                    ) : (
+                      <p className="w-full">{block.description}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 圖片連結 */}
+                <div className="w-[416px] h-[68px] flex justify-center items-start">
+                  <div className="w-[110px] h-full flex flex-col justify-start items-start gap-3">
+                    <p>圖片連結：</p>
+                    {errors[block.id]?.link && (
+                      <p className="text-[12px] text-brandRed-normal">
+                        {errors[block.id]?.link}
+                      </p>
+                    )}
+                  </div>
+                  <div className="w-[290px] h-full flex justify-start items-start break-words text-wrap text-[14px] text-brandBlue-normal">
+                    {block.isEditing ? (
+                      <input
+                        type="text"
+                        name="link"
+                        value={block.link}
+                        onChange={(e) =>
+                          handleChange(block.id, "link", e.target.value)
+                        }
+                        className="border border-gray-300 px-2 py-1 rounded w-full"
+                      />
+                    ) : (
+                      <p className="w-full">{block.link}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 按鈕 */}
+                <div className="w-full h-[42px] flex justify-end items-center gap-3">
+                  {block.isEditing ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(block.id)}
+                        className="w-[92px] h-[42px] border-2 border-brandBlue-normal p-3 text-brandBlue-normal rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSave(block.id)}
+                        className="w-[92px] h-[42px] bg-brandBlue-normal p-3 text-brandBlue-lightLight rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
+                      >
+                        確定
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(block.id)}
+                      className="w-[92px] h-[42px] bg-brandBlue-normal p-3 text-white rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
+                    >
+                      編輯
+                    </button>
                   )}
                 </div>
               </div>
-
-              {/* 按鈕 */}
-              <div className="w-full h-[42px] flex justify-end items-center gap-3">
-                {isEditing ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      className="w-[92px] h-[42px] bg-gray-400 p-3 text-white rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
-                    >
-                      取消
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      className="w-[92px] h-[42px] bg-brandBlue-normal p-3 text-white rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
-                    >
-                      確定
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleEdit}
-                    className="w-[92px] h-[42px] bg-brandBlue-normal p-3 text-white rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
-                  >
-                    編輯
-                  </button>
-                )}
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </section>
