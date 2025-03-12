@@ -60,32 +60,32 @@ const Order = () => {
   // <---------------------------篩選欄位__抓資料、輸入資料、搜尋資料----------------------->
   useEffect(() => {
     const fetchOrders = async () => {
-        try {
-            const result = await axios.get("http://localhost:8000/api/order");
-            setOrderList(result.data);
-            setFilteredOrders(result.data);
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-        }
+      try {
+        const result = await axios.get("http://localhost:8000/api/order");
+        setOrderList(result.data);
+        setFilteredOrders(result.data);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
     };
     fetchOrders();
   }, []);
 
   const handleInputChange = (field, value) => {
     setFilters(prevFilters => ({
-        ...prevFilters,
-        [field]: value
+      ...prevFilters,
+      [field]: value
     }));
   };
 
   const handleSearch = () => {
     const filtered = orderList.filter(order => {
-        return (
-            (!filters.orderId || order.order_id.includes(filters.orderId)) &&
-            (!filters.tradeStatus || order.trade_status === filters.tradeStatus) &&
-            (!filters.startDate || new Date(order.trade_Date) >= new Date(filters.startDate)) &&
-            (!filters.endDate || new Date(order.trade_Date) <= new Date(filters.endDate))
-        );
+      return (
+        (!filters.orderId || order.order_id.includes(filters.orderId)) &&
+        (!filters.tradeStatus || order.trade_status === filters.tradeStatus) &&
+        (!filters.startDate || new Date(order.trade_Date) >= new Date(filters.startDate)) &&
+        (!filters.endDate || new Date(order.trade_Date) <= new Date(filters.endDate))
+      );
     });
     setFilteredOrders(filtered);
   };
@@ -138,8 +138,8 @@ const Order = () => {
       </header>
 
 
-      {/*      
-      <section className="searchRow w-full mt-5 searchFilter flex py-5 bg-white max-md:flex-wrap max-sm:flex-col">
+      {/* {v1} */}
+      {/* <section className="searchRow w-full mt-5 searchFilter flex py-5 bg-white max-md:flex-wrap max-sm:flex-col">
                 <input
                     label="訂單編號"
                     value={filters.orderId}
@@ -175,11 +175,13 @@ const Order = () => {
 
                 <SearchButton onClick={handleSearch} />
             </section> */}
-     
-            <section className="searchRow w-full mt-5 searchFilter flex py-5 bg-white max-md:flex-wrap max-sm:flex-col">
+
+
+      {/* v2 */}
+      <section className="searchRow w-full mt-5 searchFilter flex py-5 bg-white max-md:flex-wrap max-sm:flex-col">
                 <fieldset className=" flex gap-2.5 justify-between items-center px-6  py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
                     <legend className="text-md font-medium text-zinc-700">訂單編號</legend>
-                    <input type="text" value={filters.orderId} onChange={e => handleInputChange("orderId", e.target.value)} />
+                    <input placehtype="text" value={filters.orderId} onChange={e => handleInputChange("orderId", e.target.value)} />
                 </fieldset>
                 
                 <fieldset className="flex gap-2.5 justify-between items-center px-6 py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
@@ -203,6 +205,7 @@ const Order = () => {
                 
                 <SearchButton onClick={handleSearch} />
             </section>
+     
 
 
       <section
