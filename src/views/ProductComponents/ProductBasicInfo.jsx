@@ -1,0 +1,192 @@
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import ProductImageUpload from "./ProductImageUpload";
+
+
+
+const COLORS = [
+  { name: "黑色", value: "black", className: "bg-black" },
+  { name: "灰色", value: "gray", className: "bg-gray-400" },
+  { name: "白色", value: "white", className: "bg-white border border-gray-300" },
+];
+
+const SIZES = ["L", "M", "S"];
+
+const ProductBasicInfo = () => {
+  const [category, setCategory] = useState(""); // 商品分類
+  // eslint-disable-next-line no-unused-vars
+  const [subcategory, setSubcategory] = useState(""); // 子分類
+  const [status, setStatus] = useState("active"); // 上架狀態
+  const [specifications, setSpecifications] = useState([
+    { id: 1, color: "", size: "", stock: 0, expanded: true },
+  ]);
+
+  // 新增規格
+  const addSpecification = () => {
+    setSpecifications([
+      ...specifications,
+      { id: Date.now(), color: "", size: "", stock: 0, expanded: true },
+    ]);
+  };
+
+  // 刪除規格
+  const removeSpecification = (id) => {
+    setSpecifications(specifications.filter((spec) => spec.id !== id));
+  };
+
+  // 更新規格內容
+  const updateSpecification = (id, field, value) => {
+    setSpecifications(
+      specifications.map((spec) =>
+        spec.id === id ? { ...spec, [field]: value } : spec
+      )
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* 商品種類 */}
+      <h2 className="text-2xl font-bold">商品種類 *</h2>
+
+      <div className="space-y-2">
+        <Label htmlFor="product-name">商品名稱 *</Label>
+        <Input id="product-name" placeholder="輸入商品名稱，最多20字" />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="category">商品分類 *</Label>
+        <Select onValueChange={setCategory}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="選擇分類" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="clothing">服飾</SelectItem>
+            <SelectItem value="accessory">飾品</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {category && (
+        <div className="space-y-2">
+          <Label htmlFor="subcategory">子分類 *</Label>
+          <Select onValueChange={setSubcategory}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="選擇子分類" />
+            </SelectTrigger>
+            <SelectContent>
+              {category === "clothing" ? (
+                <>
+                  <SelectItem value="tshirt">短袖</SelectItem>
+                  <SelectItem value="longsleeve">長袖</SelectItem>
+                  <SelectItem value="jacket">夾克</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="isekai2000">異世界2000</SelectItem>
+                  <SelectItem value="crystal">水晶晶系列</SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="price">價錢 *</Label>
+        <Input id="price" type="number" placeholder="輸入價格 (NT$)" />
+      </div>
+
+      <div className="space-y-2">
+        <Label>狀態 *</Label>
+        <Tabs value={status} onValueChange={setStatus}>
+          <TabsList >
+            <TabsTrigger value="active">上架中</TabsTrigger>
+            <TabsTrigger value="inactive">下架</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* 虛線區隔 */}
+      <div className="border-t border-dashed border-gray-300 pt-6"></div>
+
+      {/* 商品規格 */}
+      <div className="flex  justify-between items-center ">
+        <h2 className="text-2xl font-bold">商品規格 *</h2>
+        <Button variant="outline" onClick={addSpecification} className="mr-3">
+          新增規格
+        </Button>
+      </div>
+      {specifications.map((spec, index) => (
+        <div key={spec.id} className="border-b border-dashed pb-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">規格 {index + 1}</h3>
+            {index > 0 && (
+              <button onClick={() => removeSpecification(spec.id)} className="mr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
+                  <path fill="none" stroke="#f40039" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m2 0l2-4h6l2 4m-7 5v6m4-6v6">
+                  </path>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* 顏色選擇 */}
+          <div className="flex items-center">
+            <p className="text-sm font-medium">顏色</p>
+            <div className="flex  gap-2 ml-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${color.className} ${spec.color === color.value ? "ring-2 ring-red-500" : ""
+                    }`}
+                  onClick={() => updateSpecification(spec.id, "color", color.value)}
+                ></button>
+              ))}
+            </div>
+          </div>
+
+          {/* 尺寸選擇 */}
+          <div className="flex items-center">
+            <p className="text-sm font-medium">尺寸</p>
+            <div className="flex gap-2 ml-2">
+              {SIZES.map((size) => (
+                <button
+                  key={size}
+                  className={`w-10 h-10 px-py border rounded-md ${spec.size === size ? "border-red-500 text-red-500" : "border-gray-300"
+                    }`}
+                  onClick={() => updateSpecification(spec.id, "size", size)}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 庫存輸入框 */}
+          <div>
+            <p className="text-sm font-medium">庫存</p>
+            <Input
+              type="number"
+              min="0"
+              value={spec.stock}
+              onChange={(e) => updateSpecification(spec.id, "stock", e.target.value)}
+              className="mt-2"
+            />
+          </div>
+        </div>
+
+        
+      ))}
+      <ProductImageUpload />
+
+
+    </div>
+  );
+};
+
+export default ProductBasicInfo;

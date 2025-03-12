@@ -8,6 +8,7 @@ import Auth from "../layouts/Auth";
 const Member = lazy(() => import("../views/Member"));
 const Home = lazy(() => import("../views/Home"));
 const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
+const Products = lazy(() => import("../views/Products"));
 const CashFlow = lazy(() => import("../views/CashFlow"));
 const Marketing = lazy(() => import("../views/Marketing"));
 const Order = lazy(() => import("../views/Order"));
@@ -28,6 +29,7 @@ const AppRouter = () => {
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Home />} />
             <Route path="prods-and-store" element={<ProdsAndStore />} />
+            <Route path="products" element={<Products />} />
             <Route path="cash-flow" element={<CashFlow />} />
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
