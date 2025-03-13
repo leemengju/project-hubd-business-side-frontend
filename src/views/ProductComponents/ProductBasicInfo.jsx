@@ -1,12 +1,9 @@
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ProductImageUpload from "./ProductImageUpload";
-
-
 
 const COLORS = [
   { name: "黑色", value: "black", className: "bg-black" },
@@ -16,50 +13,62 @@ const COLORS = [
 
 const SIZES = ["L", "M", "S"];
 
-const ProductBasicInfo = () => {
-  const [category, setCategory] = useState(""); // 商品分類
-  // eslint-disable-next-line no-unused-vars
-  const [subcategory, setSubcategory] = useState(""); // 子分類
-  const [status, setStatus] = useState("active"); // 上架狀態
-  const [specifications, setSpecifications] = useState([
-    { id: 1, color: "", size: "", stock: 0, expanded: true },
-  ]);
+const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProductImages }) => {
 
   // 新增規格
   const addSpecification = () => {
-    setSpecifications([
-      ...specifications,
-      { id: Date.now(), color: "", size: "", stock: 0, expanded: true },
-    ]);
+    setProductInfo({
+      ...productInfo,
+      specifications: [
+        ...productInfo.specifications,
+        { id: Date.now(), color: "", size: "", stock: 0, expanded: true },
+      ],
+    });
   };
 
   // 刪除規格
   const removeSpecification = (id) => {
-    setSpecifications(specifications.filter((spec) => spec.id !== id));
+    setProductInfo({
+      ...productInfo,
+      specifications: productInfo.specifications.filter((spec) => spec.id !== id),
+    });
   };
 
   // 更新規格內容
   const updateSpecification = (id, field, value) => {
-    setSpecifications(
-      specifications.map((spec) =>
+    setProductInfo({
+      ...productInfo,
+      specifications: productInfo.specifications.map((spec) =>
         spec.id === id ? { ...spec, [field]: value } : spec
-      )
-    );
+      ),
+    });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-1">
+      {/* 虛線區隔 */}
+      <div className="border-t border-dashed border-gray-300 pt-6"></div>
+
       {/* 商品種類 */}
       <h2 className="text-2xl font-bold">商品種類 *</h2>
 
       <div className="space-y-2">
         <Label htmlFor="product-name">商品名稱 *</Label>
-        <Input id="product-name" placeholder="輸入商品名稱，最多20字" />
+        <Input
+          type="text"
+          id="product-name"
+          placeholder="輸入商品名稱，最多20字"
+          value={productInfo.name}
+          onChange={(e) => setProductInfo({ ...productInfo, name: e.target.value })}
+        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="category">商品分類 *</Label>
-        <Select onValueChange={setCategory}>
+        <Select
+          value={productInfo.category}
+          onValueChange={(value) => setProductInfo({ ...productInfo, category: value, subcategory: "" })}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="選擇分類" />
           </SelectTrigger>
@@ -70,15 +79,18 @@ const ProductBasicInfo = () => {
         </Select>
       </div>
 
-      {category && (
+      {productInfo.category && (
         <div className="space-y-2">
           <Label htmlFor="subcategory">子分類 *</Label>
-          <Select onValueChange={setSubcategory}>
+          <Select
+            value={productInfo.subcategory}
+            onValueChange={(value) => setProductInfo({ ...productInfo, subcategory: value })}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="選擇子分類" />
             </SelectTrigger>
             <SelectContent>
-              {category === "clothing" ? (
+              {productInfo.category === "clothing" ? (
                 <>
                   <SelectItem value="tshirt">短袖</SelectItem>
                   <SelectItem value="longsleeve">長袖</SelectItem>
@@ -97,13 +109,19 @@ const ProductBasicInfo = () => {
 
       <div className="space-y-2">
         <Label htmlFor="price">價錢 *</Label>
-        <Input id="price" type="number" placeholder="輸入價格 (NT$)" />
+        <Input
+          id="price"
+          type="number"
+          placeholder="輸入價格 (NT$)"
+          value={productInfo.price}
+          onChange={(e) => setProductInfo({ ...productInfo, price: e.target.value })}
+        />
       </div>
 
       <div className="space-y-2">
         <Label>狀態 *</Label>
-        <Tabs value={status} onValueChange={setStatus}>
-          <TabsList >
+        <Tabs value={productInfo.status} onValueChange={(value) => setProductInfo({ ...productInfo, status: value })}>
+          <TabsList>
             <TabsTrigger value="active">上架中</TabsTrigger>
             <TabsTrigger value="inactive">下架</TabsTrigger>
           </TabsList>
@@ -114,13 +132,13 @@ const ProductBasicInfo = () => {
       <div className="border-t border-dashed border-gray-300 pt-6"></div>
 
       {/* 商品規格 */}
-      <div className="flex  justify-between items-center ">
+      <div className="flex justify-between items-center ">
         <h2 className="text-2xl font-bold">商品規格 *</h2>
         <Button variant="outline" onClick={addSpecification} className="mr-3">
           新增規格
         </Button>
       </div>
-      {specifications.map((spec, index) => (
+      {productInfo.specifications.map((spec, index) => (
         <div key={spec.id} className="border-b border-dashed pb-4 space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">規格 {index + 1}</h3>
@@ -138,7 +156,7 @@ const ProductBasicInfo = () => {
           {/* 顏色選擇 */}
           <div className="flex items-center">
             <p className="text-sm font-medium">顏色</p>
-            <div className="flex  gap-2 ml-2">
+            <div className="flex gap-2 ml-2">
               {COLORS.map((color) => (
                 <button
                   key={color.value}
@@ -179,12 +197,13 @@ const ProductBasicInfo = () => {
             />
           </div>
         </div>
-
-        
       ))}
-      <ProductImageUpload />
-
-
+      <ProductImageUpload
+        title="商品圖片 *"
+        description="請上傳 1 到 4 張圖片，第一張為封面照（建議尺寸 600×720 像素）"
+        images={productImages}
+        setImages={setProductImages}
+      />
     </div>
   );
 };

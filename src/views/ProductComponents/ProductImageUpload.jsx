@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,14 +17,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-
-
-
-const ProductImageUpload = () => {
-    
-
-    const [images, setImages] = useState([]);
-    const fileInputRef = useRef(null); // 參考 input，手動觸發上傳
+const ProductImageUpload = ({ title, description, images, setImages }) => {
+    const fileInputRef = useRef(null);
 
     // 手動點擊 input 來打開選擇檔案視窗
     const triggerFileSelect = () => {
@@ -52,7 +46,6 @@ const ProductImageUpload = () => {
 
     // 刪除圖片
     const removeImage = (id) => {
-
         setImages((prevImages) => prevImages.filter((image) => image.id !== id));
     };
 
@@ -79,15 +72,13 @@ const ProductImageUpload = () => {
             {/* 標題與上傳按鈕 */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold">商品圖片 *</h2>
-                    <p className="text-sm text-gray-500">
-                        請上傳 1 到 4 張圖片，第一張為封面照（建議尺寸 600×720 像素）
-                    </p>
+                    <h2 className="text-2xl font-bold">{title}</h2>
+                    <p className="text-sm text-gray-500">{description}</p>
                 </div>
                 <Button variant="outline" onClick={triggerFileSelect}>上傳照片</Button>
                 <Input
                     type="file"
-                    ref={fileInputRef} // 綁定 ref
+                    ref={fileInputRef}
                     className="hidden"
                     accept="image/*"
                     multiple
@@ -115,7 +106,6 @@ const ProductImageUpload = () => {
     );
 };
 
-// **單個可拖曳圖片的組件**
 const SortableImage = ({ image, index, removeImage }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
 
@@ -125,28 +115,22 @@ const SortableImage = ({ image, index, removeImage }) => {
     };
 
     return (
-        <div className="flex flex-col items-end" >
+        <div className="flex flex-col items-end">
             <button
-                
-                onClick={() => {
-                    
-                    removeImage(image.id);
-                }}
+                onClick={() => removeImage(image.id)}
+                className="w-6 h-6 bg-white rounded-full shadow text-red-500"
             >
                 ✕
             </button>
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="relative w-[110px] h-[110px] bg-gray-100 border rounded-md overflow-hidden cursor-grab"
-        >
-            
-            
-            <img src={image.url} alt={`uploaded-${index}`} className="w-full h-full object-cover" />
-            
-        </div>
+            <div
+                ref={setNodeRef}
+                style={style}
+                {...attributes}
+                {...listeners}
+                className="relative w-[110px] h-[110px] bg-gray-100 border rounded-md overflow-hidden cursor-grab"
+            >
+                <img src={image.url} alt={`uploaded-${index}`} className="w-full h-full object-cover" />
+            </div>
         </div>
     );
 };
