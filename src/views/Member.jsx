@@ -12,17 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 
 const Member = () => {
-  const [members, setMembers] = useState([
-    { id: 1, name: "張三", email: "zhangsan@example.com", phone: "0912-345-678", birthday: "1990-01-01", created_at: "2024-03-12" },
-    { id: 2, name: "李四", email: "lisi@example.com", phone: "0987-654-321", birthday: "1995-05-20", created_at: "2024-03-10" }
-  ]); // 存放會員資料
+  const [members, setMembers] = useState([]); // 存放會員資料
 
-  // useEffect(() => {
-  //   axios
-  //     .get("api路徑") // 這裡換成你的 API 路徑
-  //     .then((response) => setMembers(response.data)) // 把資料存入 members
-  //     .catch((error) => console.error("Error fetching members:", error));
-  // }, []);
+  useEffect(() => {
+    axios
+      .get("http://127.0.0.1:8001/api/users/") // 這裡換成你的 API 路徑
+      .then((response) => setMembers(response.data)) // 把資料存入 members
+      .catch((error) => console.error("Error fetching members:", error));
+  }, []);
 
   return (
     <div className="p-6">
@@ -62,10 +59,7 @@ const Member = () => {
                 </TableCell>
                 <TableCell className="text-center">
                   <Button variant="outline" size="sm" className="mr-2">
-                    編輯
-                  </Button>
-                  <Button variant="destructive" size="sm">
-                    刪除
+                    檢視
                   </Button>
                 </TableCell>
               </TableRow>
