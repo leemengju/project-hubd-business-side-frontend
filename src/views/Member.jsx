@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 
 const Member = () => {
   const [members, setMembers] = useState([]); // 存放會員資料
+  const [selectedMember, setSelectedMember] = useState(null); // 用來存放點擊的會員資料
+  const [showModal, setShowModal] = useState(false); // 控制 Modal 開關
 
   useEffect(() => {
     axios
@@ -20,6 +22,18 @@ const Member = () => {
       .then((response) => setMembers(response.data)) // 把資料存入 members
       .catch((error) => console.error("Error fetching members:", error));
   }, []);
+
+  // 點擊檢視按鈕時，設定選中的會員並顯示 Modal
+  const handleViewMember = (member) => {
+    setSelectedMember(member);
+    setShowModal(true);
+  };
+
+  // 關閉 Modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedMember(null);
+  };
 
   return (
     <div className="p-6">
@@ -41,7 +55,7 @@ const Member = () => {
             <TableHead className="text-center">操作</TableHead>
           </TableRow>
         </TableHeader>
-        
+
         <TableBody>
           {/* 動態生成會員內容 */}
           {members.length > 0 ? (
@@ -58,7 +72,12 @@ const Member = () => {
                   {new Date(member.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Button variant="outline" size="sm" className="mr-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mr-2"
+                    onClick={() => handleViewMember(member)} // 點擊檢視按鈕
+                  >
                     檢視
                   </Button>
                 </TableCell>
@@ -73,6 +92,26 @@ const Member = () => {
           )}
         </TableBody>
       </Table>
+      {/* 會員詳細資料 Modal */}
+      {showModal && selectedMember && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">會員詳細資料</h2>
+            <p><strong>ID:</strong> {selectedMember.id}</p>
+            <p><strong>姓名:</strong> {selectedMember.name}</p>
+            <p><strong>Email:</strong> {selectedMember.email}</p>
+            <p><strong>手機:</strong> {selectedMember.phone}</p>
+            <p><strong>生日:</strong> {selectedMember.birthday}</p>
+            <p><strong>建立時間:</strong> {new Date(selectedMember.created_at).toLocaleDateString()}</p>
+
+            <div className="mt-4 flex justify-end">
+              <Button variant="outline" onClick={handleCloseModal}>
+                關閉
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
