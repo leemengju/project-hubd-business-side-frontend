@@ -16,7 +16,7 @@ const Member = () => {
 
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:8001/api/users/") // 這裡換成你的 API 路徑
+      .get("http://127.0.0.1:8000/api/users/") // 這裡換成你的 API 路徑
       .then((response) => setMembers(response.data)) // 把資料存入 members
       .catch((error) => console.error("Error fetching members:", error));
   }, []);
