@@ -2,26 +2,28 @@ import { Link } from "react-router-dom";
 import logo from "../assets/images/home_logo.png";
 
 const Sidebar = () => {
- const  changeActive = (e) => {
+  const changeActive = (e) => {
     // Select all elements with the class 'sidebarTag'
-    let sidebarTag = document.querySelectorAll('.sidebarTag');
-    
+    let sidebarTag = document.querySelectorAll(".sidebarTag");
+
     // Remove 'active' class from all sidebar tags
     sidebarTag.forEach((tag) => {
-      tag.classList.remove('active');
-      tag.className = 'sidebarTag h-[50px] ps-5 flex justify-center items-center';
+      tag.classList.remove("active");
+      tag.className =
+        "sidebarTag h-[50px] ps-5 flex justify-center items-center";
     });
-  
+
     // Add 'active' class to the focused element
-    e.currentTarget.classList.add('active');
-  
+    e.currentTarget.classList.add("active");
+
     // Change the focused tag's class to active state
-    e.currentTarget.className = 'sidebarTag w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center';
+    e.currentTarget.className =
+      "sidebarTag w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center";
   };
-  
+
   // Adding event listeners to focus events
-  document.querySelectorAll('.sidebarTag').forEach(tag => {
-    tag.addEventListener('focus', changeActive);
+  document.querySelectorAll(".sidebarTag").forEach((tag) => {
+    tag.addEventListener("focus", changeActive);
   });
 
   return (
@@ -30,7 +32,7 @@ const Sidebar = () => {
       <Link to="/" className="mb-5">
         <img src={logo} className="w-[175px]" alt="Logo" />
       </Link>
-       {/* sidebarTag */}
+      {/* sidebarTag */}
       <div className="flex flex-col justify-start items-start gap-5">
         <div className="w-[220px] flex flex-col justify-start items-start gap-5 text-brandGray-normal font-normal">
           {/* Dashboard */}
@@ -59,7 +61,6 @@ const Sidebar = () => {
             to="/order"
             className="sidebarTag w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center"
             onClick={changeActive}
-            
           >
             <span>
               <svg
@@ -78,7 +79,7 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;訂單管理
           </Link>
-           {/* prods-and-store */}
+          {/* prods-and-store */}
           <Link
             to="/prods-and-store"
             className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
@@ -105,7 +106,7 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;商品及賣場管理
           </Link>
-           {/* cash-flow */}
+          {/* cash-flow */}
           <Link
             to="/cash-flow"
             className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
@@ -181,7 +182,7 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;會員資訊管理
           </Link>
-           {/* marketing */}
+          {/* marketing */}
           <Link
             to="/marketing"
             className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
@@ -202,12 +203,12 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;行銷管理
           </Link>
-           {/* setting */}
+          {/* setting */}
           <Link
             to="setting"
             className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
             onClick={changeActive}
-         >
+          >
             <span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -228,6 +229,5 @@ const Sidebar = () => {
     </div>
   );
 };
-
 
 export default Sidebar;
