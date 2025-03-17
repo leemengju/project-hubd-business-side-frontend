@@ -16,6 +16,7 @@ const OrderTest = lazy(() => import("../views/Order_test"));
 const Setting = lazy(() => import("../views/Setting"));
 const Login = lazy(() => import("../views/auth/Login"));
 const Register = lazy(() => import("../views/auth/Register"));
+const PasswordForget = lazy(() => import("../views/auth/PasswordForget"));
 
 
 // Loading 畫面（避免白屏）
@@ -45,6 +46,8 @@ const AppRouter = () => {
           <Route path="auth" element={<Auth />}>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="password-forget" element={<PasswordForget />} />
+
           </Route>
         </Routes>
       </Suspense>
