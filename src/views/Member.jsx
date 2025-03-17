@@ -127,7 +127,7 @@ const Member = () => {
         </CSVLink>
       </div>
 
-      <Table className="w-full border">
+      <Table className="w-full border rounded-lg overflow-hidden">
         <TableCaption>會員資訊列表</TableCaption>
         <TableHeader>
           <TableRow className="bg-gray-200">
@@ -183,7 +183,7 @@ const Member = () => {
           variant="outline"
           onClick={() => setCurrentPage(currentPage - 1)}
           disabled={currentPage === 1}
-          className="mr-2"
+          className="mr-2 bg-brandBlue-normal text-white"
         >
           上一頁
         </Button>
@@ -194,7 +194,7 @@ const Member = () => {
           variant="outline"
           onClick={() => setCurrentPage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="ml-2"
+          className="ml-2 bg-brandBlue-normal text-white"
         >
           下一頁
         </Button>
