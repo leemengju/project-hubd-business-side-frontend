@@ -15,6 +15,7 @@ const Member = () => {
   const [members, setMembers] = useState([]); // 存放會員資料
   const [selectedMember, setSelectedMember] = useState(null); // 用來存放點擊的會員資料
   const [showModal, setShowModal] = useState(false); // 控制 Modal 開關
+  const [orderData, setOrderData] = useState({ totalOrders: 0, totalSpent: 0 });//訂單數＆消費總金額
 
   useEffect(() => {
     axios
@@ -27,12 +28,27 @@ const Member = () => {
   const handleViewMember = (member) => {
     setSelectedMember(member);
     setShowModal(true);
+
+    // 請求 API 取得該會員的訂單資訊
+    axios
+      .get(`http://127.0.0.1:8000/api/users/${member.id}/orders`) // 向後端請求會員的訂單數和消費金額
+      .then((response) => {
+        setOrderData({
+          totalOrders: response.data.totalOrders || 0, // 訂單數
+          totalSpent: Number(response.data.totalSpent) || 0, // 總消費金額
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching order data:", error);
+        setOrderData({ totalOrders: 0, totalSpent: 0 }); // 如果出錯，預設為 0
+      });
   };
 
   // 關閉 Modal
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedMember(null);
+    setOrderData({ totalOrders: 0, totalSpent: 0 }); // 清空訂單資訊
   };
 
   return (
@@ -92,25 +108,53 @@ const Member = () => {
           )}
         </TableBody>
       </Table>
-      
+
       {/* 會員詳細資料 Modal */}
       {showModal && selectedMember && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 space-y-5">
-            <h2 className="text-xl font-bold mb-6">會員詳細資料</h2>
-            <p><strong>ID:</strong> {selectedMember.id}</p>
-            <hr />
-            <p><strong>姓名:</strong> {selectedMember.name}</p>
-            <hr />
-            <p><strong>Email:</strong> {selectedMember.email}</p>
-            <hr />
-            <p><strong>手機:</strong> {selectedMember.phone}</p>
-            <hr />
-            <p><strong>生日:</strong> {selectedMember.birthday}</p>
-            <hr />
-            <p><strong>建立時間:</strong> {new Date(selectedMember.created_at).toLocaleDateString()}</p>
+          <div className="bg-white w-[700px] h-[700px] justify-center items-center relative shadow-lg rounded-lg"></div>
+          <div className="bg-white p-6 rounded-lg  w-[600px] h-[600px] space-y-4 border border-gray-300 absolute">
+            <div className="items-center">
 
-            <div className="mt-4 flex justify-center">
+            <h2 className="text-xl font-bold mb-6 text-center">
+              會員詳細資料
+            </h2>
+            </div>
+            <hr />
+            <p>
+              <strong>會員編號:</strong> {selectedMember.id}
+            </p>
+            <hr />
+            <p>
+              <strong>姓名:</strong> {selectedMember.name}
+            </p>
+            <hr />
+            <p>
+              <strong>Email:</strong> {selectedMember.email}
+            </p>
+            <hr />
+            <p>
+              <strong>手機:</strong> {selectedMember.phone}
+            </p>
+            <hr />
+            <p>
+              <strong>生日:</strong> {selectedMember.birthday}
+            </p>
+            <hr />
+            <p>
+              <strong>建立時間:</strong>
+              {new Date(selectedMember.created_at).toLocaleDateString()}
+            </p>
+            <hr />
+            <p>
+              <strong>完成訂單數:</strong>{orderData.totalOrders}
+            </p>
+          <hr />
+          <p>
+            <strong>消費總金額:</strong>${orderData.totalSpent.toFixed(2)}
+          </p>
+          <hr />
+            <div className="mt-auto flex justify-center">
               <Button variant="outline" onClick={handleCloseModal}>
                 關閉
               </Button>
