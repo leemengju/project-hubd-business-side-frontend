@@ -92,19 +92,25 @@ const Member = () => {
           )}
         </TableBody>
       </Table>
+      
       {/* 會員詳細資料 Modal */}
       {showModal && selectedMember && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">會員詳細資料</h2>
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 space-y-5">
+            <h2 className="text-xl font-bold mb-6">會員詳細資料</h2>
             <p><strong>ID:</strong> {selectedMember.id}</p>
+            <hr />
             <p><strong>姓名:</strong> {selectedMember.name}</p>
+            <hr />
             <p><strong>Email:</strong> {selectedMember.email}</p>
+            <hr />
             <p><strong>手機:</strong> {selectedMember.phone}</p>
+            <hr />
             <p><strong>生日:</strong> {selectedMember.birthday}</p>
+            <hr />
             <p><strong>建立時間:</strong> {new Date(selectedMember.created_at).toLocaleDateString()}</p>
 
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-center">
               <Button variant="outline" onClick={handleCloseModal}>
                 關閉
               </Button>
