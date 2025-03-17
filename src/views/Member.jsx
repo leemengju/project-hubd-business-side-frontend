@@ -30,11 +30,11 @@ const Member = () => {
   const membersPerPage = 30; //每頁最多30筆
 
   useEffect(() => {
-    axios
-      .get("http://127.0.0.1:8000/api/users/") // 這裡換成你的 API 路徑
-      .then((response) => setMembers(response.data)) // 把資料存入 members
+    axios 
+      .get(`http://127.0.0.1:8000/api/users?page=${currenPage}`) // 這裡換成你的 API 路徑  前端使用 Lazy Loading
+      .then((response) => setMembers(response.data.data)) // 把資料存入 members
       .catch((error) => console.error("Error fetching members:", error));
-  }, []);
+  }, [currentPage]);// 只有當 currentPage 改變時，才重新載入資料
 
   // 點擊檢視按鈕時，設定選中的會員並顯示 Modal
   const handleViewMember = (member) => {
