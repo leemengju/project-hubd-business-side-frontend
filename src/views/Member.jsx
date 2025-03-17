@@ -10,12 +10,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { CSVLink } from "react-csv";
 
 const Member = () => {
   const [members, setMembers] = useState([]); // 存放會員資料
   const [selectedMember, setSelectedMember] = useState(null); // 用來存放點擊的會員資料
   const [showModal, setShowModal] = useState(false); // 控制 Modal 開關
   const [orderData, setOrderData] = useState({ totalOrders: 0, totalSpent: 0 }); //訂單數＆消費總金額
+  const headers = [
+    { label: "會員編號", key: "id" },
+    { label: "姓名", key: "name" },
+    { label: "Email", key: "email" },
+    { label: "手機", key: "phone" },
+    { label: "生日", key: "birthday" },
+    { label: "建立時間", key: "created_at" },
+  ];
+
 
   useEffect(() => {
     axios
@@ -54,9 +64,11 @@ const Member = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">會員資料列表</h1>
+      <CSVLink data={members} headers={headers} filename={"會員資料.csv"}>
       <Button variant="outline" className="mb-4">
         匯出
       </Button>
+      </CSVLink>
 
       <Table className="w-full border">
         <TableCaption>會員資訊列表</TableCaption>
