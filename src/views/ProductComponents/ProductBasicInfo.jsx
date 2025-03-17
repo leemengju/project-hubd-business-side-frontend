@@ -138,7 +138,7 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
           新增規格
         </Button>
       </div>
-      {productInfo.specifications.map((spec, index) => (
+      {(productInfo?.specifications || []).map((spec, index) => (
         <div key={spec.id} className="border-b border-dashed pb-4 space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">規格 {index + 1}</h3>
