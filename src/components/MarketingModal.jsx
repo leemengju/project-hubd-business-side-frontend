@@ -19,11 +19,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogOverlay,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import api from "../services/api";
 
 const MarketingModal = ({ 
   isOpen, 
@@ -41,6 +43,10 @@ const MarketingModal = ({
   const [dateError, setDateError] = useState("");
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
+  const codeCheckTimeout = useRef(null);
+  const mouseDownOutside = useRef(false);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -77,24 +83,78 @@ const MarketingModal = ({
     }
   }, [formData]);
 
-  // 防止點擊modal內部時關閉
-  const handleModalClick = (e) => {
-    e.stopPropagation();
+  // 監聽ESC按鍵
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        // 先檢查確認視窗是否開啟，如果是則關閉確認視窗
+        if (showCloseConfirmation) {
+          setShowCloseConfirmation(false);
+        } 
+        // 如果確認視窗未開啟，則處理主視窗的關閉
+        else if (isDirty) {
+          setShowCloseConfirmation(true);
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, isDirty, showCloseConfirmation, onClose]);
+
+  // 控制背景滾動
+  useEffect(() => {
+    if (isOpen) {
+      // 禁用背景滾動
+      document.body.style.overflow = 'hidden';
+    } else {
+      // 恢復背景滾動
+      document.body.style.overflow = '';
+    }
+    
+    // 組件卸載時恢復背景滾動
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // 處理滑鼠按下事件
+  const handleMouseDown = (e) => {
+    // 檢查滑鼠按下是否在背景層 (也就是視窗外)
+    if (e.target === e.currentTarget) {
+      mouseDownOutside.current = true;
+    } else {
+      mouseDownOutside.current = false;
+    }
   };
 
-  // 處理外部點擊
-  const handleOutsideClick = () => {
-    if (isDirty) {
-      setShowCloseConfirmation(true);
-    } else {
-      onClose();
+  // 處理外部點擊 (改為滑鼠放開事件)
+  const handleMouseUp = (e) => {
+    // 只有當滑鼠按下和放開都在視窗外時，才觸發關閉確認
+    if (e.target === e.currentTarget && mouseDownOutside.current) {
+      if (isDirty) {
+        setShowCloseConfirmation(true);
+      } else {
+        onClose();
+      }
     }
+    // 重置滑鼠按下狀態
+    mouseDownOutside.current = false;
   };
 
   // 處理確認關閉
   const handleConfirmClose = () => {
     setShowCloseConfirmation(false);
     onClose();
+  };
+
+  // 處理取消關閉
+  const handleCancelClose = () => {
+    setShowCloseConfirmation(false);
   };
 
   const handleSelectorConfirm = (selectedItems) => {
@@ -156,9 +216,84 @@ const MarketingModal = ({
     return true;
   };
 
+  // 驗證優惠券代碼格式
+  const validateCouponCode = (code) => {
+    if (!code) return "優惠券代碼為必填";
+    if (code.length < 5) return "優惠券代碼至少需要5碼";
+    if (code.length > 10) return "優惠券代碼最多10碼";
+    if (!/^[A-Za-z][A-Za-z0-9]*$/.test(code)) return "優惠券代碼必須以英文字母開頭，且只能包含英文字母和數字";
+    return "";
+  };
+
+  // 檢查優惠券代碼是否存在
+  const checkCouponCodeExists = async (code) => {
+    try {
+      setIsCheckingCode(true);
+      const response = await api.get(`/coupons/check-code/${code}`);
+      if (response.data.exists) {
+        setCodeError("此優惠券代碼已存在");
+        return true;
+      }
+      setCodeError("");
+      return false;
+    } catch (error) {
+      console.error("檢查優惠券代碼時發生錯誤:", error);
+      setCodeError("檢查優惠券代碼時發生錯誤");
+      return false;
+    } finally {
+      setIsCheckingCode(false);
+    }
+  };
+
+  // 處理優惠券代碼變更
+  const handleCodeChange = (e) => {
+    const newCode = e.target.value.toUpperCase(); // 自動轉為大寫
+    setFormData({...formData, code: newCode});
+    
+    // 即時驗證格式
+    const formatError = validateCouponCode(newCode);
+    setCodeError(formatError);
+  };
+
+  // 處理優惠券代碼失去焦點
+  const handleCodeBlur = () => {
+    const code = formData.code;
+    const formatError = validateCouponCode(code);
+    
+    if (formatError) {
+      setCodeError(formatError);
+      return;
+    }
+
+    // 清除之前的 timeout
+    if (codeCheckTimeout.current) {
+      clearTimeout(codeCheckTimeout.current);
+    }
+
+    // 設定新的 timeout 以防止過於頻繁的 API 呼叫
+    codeCheckTimeout.current = setTimeout(() => {
+      if (mode === 'add' || (mode === 'edit' && code !== formData.originalCode)) {
+        checkCouponCodeExists(code);
+      }
+    }, 300);
+  };
+
   // 處理表單提交
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (type === 'coupons') {
+      const formatError = validateCouponCode(formData.code);
+      if (formatError) {
+        setCodeError(formatError);
+        return;
+      }
+
+      if (mode === 'add' || (mode === 'edit' && formData.code !== formData.originalCode)) {
+        const exists = await checkCouponCodeExists(formData.code);
+        if (exists) return;
+      }
+    }
     
     // 驗證日期
     if (!validateDates(formData.start_date, formData.end_date)) {
@@ -174,7 +309,8 @@ const MarketingModal = ({
     <>
       <div 
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-        onClick={handleOutsideClick}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
       >
         <div 
           ref={modalRef}
@@ -182,7 +318,7 @@ const MarketingModal = ({
             "bg-white rounded-lg shadow-xl w-[90%] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col",
             "border border-border"
           )}
-          onClick={handleModalClick}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* 標題區域 */}
           <div className="flex items-center justify-between p-4 border-b">
@@ -230,13 +366,41 @@ const MarketingModal = ({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="code">優惠碼</Label>
-                    <Input
-                      id="code"
-                      type="text"
-                      value={formData.code || ""}
-                      onChange={(e) => setFormData({...formData, code: e.target.value})}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="code"
+                        type="text"
+                        value={formData.code || ""}
+                        onChange={handleCodeChange}
+                        onBlur={handleCodeBlur}
+                        className={cn(
+                          "uppercase",
+                          codeError && "border-destructive focus-visible:ring-destructive"
+                        )}
+                        required
+                        maxLength={10}
+                        placeholder="例：SUMMER2024"
+                        disabled={isCheckingCode}
+                      />
+                      {isCheckingCode && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin h-4 w-4 border-2 border-brandBlue-normal border-t-transparent rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                    {codeError && (
+                      <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                        <AlertCircleIcon className="h-4 w-4" />
+                        {codeError}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-500 mt-1">
+                      • 優惠碼必須以英文字母開頭
+                      <br />
+                      • 長度為5-10個字元
+                      <br />
+                      • 僅能使用英文字母和數字
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="discount_type">折扣類型</Label>
@@ -739,20 +903,31 @@ const MarketingModal = ({
       </div>
 
       {/* 未儲存資料關閉確認 */}
-      <AlertDialog open={showCloseConfirmation} onOpenChange={setShowCloseConfirmation}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>確定要關閉嗎？</AlertDialogTitle>
-            <AlertDialogDescription>
-              您有尚未儲存的變更，關閉視窗將會遺失這些資料。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmClose}>確定關閉</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {showCloseConfirmation && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-[1px] transition-all duration-200" onClick={() => setShowCloseConfirmation(false)}>
+          <div 
+            className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md border animate-in fade-in-50 zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-2">確定要關閉嗎？</h3>
+            <p className="text-gray-600 mb-4">您有尚未儲存的變更，關閉視窗將會遺失這些資料。</p>
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline"
+                onClick={handleCancelClose}
+              >
+                取消
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleConfirmClose}
+              >
+                確定關閉
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
