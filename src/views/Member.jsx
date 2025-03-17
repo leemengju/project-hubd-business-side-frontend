@@ -26,7 +26,6 @@ const Member = () => {
     { label: "建立時間", key: "created_at" },
   ];
 
-
   useEffect(() => {
     axios
       .get("http://127.0.0.1:8000/api/users/") // 這裡換成你的 API 路徑
@@ -65,9 +64,9 @@ const Member = () => {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">會員資料列表</h1>
       <CSVLink data={members} headers={headers} filename={"會員資料.csv"}>
-      <Button variant="outline" className="mb-4">
-        匯出
-      </Button>
+        <Button variant="outline" className="mb-4 bg-brandBlue-normal text-white">
+          匯出
+        </Button>
       </CSVLink>
 
       <Table className="w-full border">
@@ -103,7 +102,7 @@ const Member = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mr-2"
+                    className="mr-2 bg-brandBlue-normal text-white"
                     onClick={() => handleViewMember(member)} // 點擊檢視按鈕
                   >
                     檢視
@@ -150,7 +149,9 @@ const Member = () => {
             <hr />
             <p className="grid grid-cols-2">
               <strong>建立時間:</strong>
-              <span>{new Date(selectedMember.created_at).toLocaleDateString()}</span>
+              <span>
+                {new Date(selectedMember.created_at).toLocaleDateString()}
+              </span>
             </p>
             <hr />
             <p className="grid grid-cols-2">
@@ -159,11 +160,12 @@ const Member = () => {
             </p>
             <hr />
             <p className="grid grid-cols-2">
-              <strong>消費總金額:</strong><span>${orderData.totalSpent.toFixed(2)}</span>
+              <strong>消費總金額:</strong>
+              <span>${orderData.totalSpent.toFixed(2)}</span>
             </p>
             <hr />
             <div className="mt-auto flex justify-center">
-              <Button variant="outline" onClick={handleCloseModal}>
+              <Button variant="outline" onClick={handleCloseModal} className="bg-brandBlue-normal text-white">
                 關閉
               </Button>
             </div>
