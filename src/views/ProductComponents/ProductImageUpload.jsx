@@ -75,7 +75,7 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
                     <h2 className="text-2xl font-bold">{title}</h2>
                     <p className="text-sm text-gray-500">{description}</p>
                 </div>
-                <Button variant="outline" onClick={triggerFileSelect}>上傳照片</Button>
+                <Button variant="outline" className="mr-3" onClick={triggerFileSelect}>上傳照片</Button>
                 <Input
                     type="file"
                     ref={fileInputRef}

@@ -9,7 +9,8 @@ import AddProductDialog from "./ProductComponents/AddProductDialog";
 
 
 const Products = () => {
-  
+  const [editProduct, setEditProduct] = useState(null); // 追蹤當前要編輯的商品
+
   const [products] = useState([
     {
       id: "RDD0001",
@@ -17,9 +18,16 @@ const Products = () => {
       name: "潮流東大門神社紀念版大學長外套",
       price: 2000,
       stock: 120,
-      status: "上架中",
+      status: "active",
+      specifications: [],
+      category: "clothing",
+      subcategory: "jacket",
+      description: "限量發售，經典復刻。",
+      material: "棉質",
+      specification: "L / XL",
+      shipping: "7天內發貨",
+      additional: "手洗建議",
     },
-    // 可以加入更多假資料
   ]);
 
   return (
@@ -51,7 +59,7 @@ const Products = () => {
             <TabsTrigger value="carousel">賣場輪播圖</TabsTrigger>
           </TabsList>
           {/* 新增商品按鈕 & Drawer */}
-          <AddProductDialog />
+          <AddProductDialog editProduct={editProduct} setEditProduct={setEditProduct} />
         </div>
         <TabsContent value="products">
           {/* 篩選與搜尋區塊 */}
@@ -112,18 +120,24 @@ const Products = () => {
                           <SelectValue placeholder="選擇狀態" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="上架中">上架中</SelectItem>
-                          <SelectItem value="下架中">下架中</SelectItem>
+                          <SelectItem value="active">上架中</SelectItem>
+                          <SelectItem value="unactive">下架中</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="ghost" size="icon">
+                      {/* 點擊編輯時，設置當前選中的商品到 editProduct */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          console.log("Editing product:", product); // 確認商品數據是否正確
+                          setEditProduct(product);
+                        }}
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z" /></svg>
                       </Button>
-                      <Button variant="ghost" size="icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24"><path fill="none" stroke="#f40039" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m2 0l2-4h6l2 4m-7 5v6m4-6v6"></path></svg>
-                      </Button>
+
                     </TableCell>
                   </TableRow>
                 ))}
