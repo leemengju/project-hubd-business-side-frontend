@@ -17,7 +17,6 @@ const Products = () => {
       image: "https://via.placeholder.com/50",
       name: "潮流東大門神社紀念版大學長外套",
       price: 2000,
-      stock: 120,
       status: "active",
       specifications: [],
       category: "clothing",
@@ -58,10 +57,13 @@ const Products = () => {
             <TabsTrigger value="templates">賣場樣板圖</TabsTrigger>
             <TabsTrigger value="carousel">賣場輪播圖</TabsTrigger>
           </TabsList>
+          <TabsContent value="products">
           {/* 新增商品按鈕 & Drawer */}
           <AddProductDialog editProduct={editProduct} setEditProduct={setEditProduct} />
+          </TabsContent>
         </div>
         <TabsContent value="products">
+          
           {/* 篩選與搜尋區塊 */}
           <div className="flex gap-2 mb-4">
             <Select>
