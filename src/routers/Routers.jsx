@@ -11,6 +11,7 @@ const CashFlow = lazy(() => import("../views/CashFlow"));
 const Marketing = lazy(() => import("../views/Marketing"));
 const Order = lazy(() => import("../views/Order"));
 const OrderTest = lazy(() => import("../views/Order_test"));
+const OrderTest2 = lazy(() => import("../views/Order_test2"));
 const Setting = lazy(() => import("../views/Setting"));
 const Login = lazy(() => import("../views/auth/Login"));
 const Register = lazy(() => import("../views/auth/Register"));
@@ -33,6 +34,7 @@ const AppRouter = () => {
             <Route path="marketing" element={<Marketing />} />
             <Route path="order" element={<Order />} />
             <Route path="order_test" element={<OrderTest />} />
+            <Route path="order_test2" element={<OrderTest2 />} />
             <Route path="setting" element={<Setting />} />
            
           </Route>

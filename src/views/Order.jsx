@@ -107,17 +107,7 @@ const Order = () => {
     setSelectedOrder(null);
     setOrderDetails([]);
   };
-  // // <-----------------------------------function，open&closepopup__v1------------------------------------------>
-  // const openPopup = () => {
-  //   if (popupRef.current) {
-  //     popupRef.current.className = "popup fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50";
-  //   }
-  // };
-  // const closePopup = () => {
-  //   if (popupRef.current) {
-  //     popupRef.current.className = "popup hidden fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50";
-  //   }
-  // };
+
 
   return (
     <React.Fragment>
@@ -132,7 +122,7 @@ const Order = () => {
           </h1>
         </div>
         <div className="flex gap-2.5 max-sm:flex-col max-sm:w-full">
-          <ExportButton>匯出cvs</ExportButton>
+          <ExportButton>匯出csv</ExportButton>
           <ExportButton>匯出excel</ExportButton>
         </div>
       </header>
@@ -273,7 +263,7 @@ const Order = () => {
               {orderData.trade_Date}
             </p>
             <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.member_id}
+              {orderData.id}
             </p>
             <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
               {orderData.total_price_with_discount}
@@ -403,8 +393,7 @@ const Order = () => {
                     <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">顏色:</span><span> {detail.product_color}</span></div>
                     <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">尺寸:</span><span>{detail.product_size}</span></div>
                     <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">數量:</span><span>{detail.quantity}</span></div>
-                    <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">折扣價:</span><span>{detail.discount_price}</span></div>
-                    <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">原價:</span><span>{detail.original_price}</span></div>
+                    <div key={index} className="text-brandGrey-normal flex justify-between border-b pb-1 pt-1 px-2"><span className="text-brandGrey-normal font-semibold">單價:</span><span>{detail.product_price}</span></div>
                   </React.Fragment>
                 ))
               ) : (
@@ -442,9 +431,6 @@ const Order = () => {
         </div>
 
       )} */}
-
-
-
 
     </React.Fragment>
   );//edn of return

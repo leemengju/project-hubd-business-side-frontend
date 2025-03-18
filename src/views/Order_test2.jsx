@@ -18,7 +18,7 @@ const Order = () => {
   const [orderDetails, setOrderDetails] = useState([]);
   const popupRef = useRef(null);
 
-  // <---------------------------調資料呈現在畫面----------------------->
+  // <---------------------------調資料呈現在住畫面----------------------->
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -61,23 +61,16 @@ const Order = () => {
     }));
   };
 
-  const handleSearch = (orderData) => {
-    console.log("Order Data:", orderData);
+  const handleSearch = () => {
     const filtered = orderList.filter(order => {
-      // Convert dates to timestamp for easier comparison
-      const orderDate = new Date(order.trade_Date).getTime();
-      const startDate = filters.startDate ? new Date(filters.startDate).getTime() : null;
-      const endDate = filters.endDate ? new Date(filters.endDate).getTime() : null;
-      console.log("Order list:", orderList);
       return (
         (!filters.orderId || order.order_id.includes(filters.orderId)) &&
         (!filters.tradeStatus || filters.tradeStatus === '全部' || order.trade_status === filters.tradeStatus) &&
-        (!startDate || orderDate >= startDate) &&
-        (!endDate || orderDate <= endDate)
+        (!filters.startDate || new Date(order.trade_Date) >= new Date(filters.startDate)) &&
+        (!filters.endDate || new Date(order.trade_Date) <= new Date(filters.endDate))
       );
     });
     setFilteredOrders(filtered);
-    console.log("Filtered orders:", filtered); // Add this for debugging
   };
 
   // <-----------------------------------function，open&closepopup__v2------------------------------------------>
