@@ -134,7 +134,7 @@ const Order = () => {
           <div className="my-auto w-6">
             <DocumentIcon />
           </div>
-          <h1 className="text-xl font-semibold text-slate-800">
+          <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
             訂單管理
           </h1>
           {/* <---------------------------------------測試日誌---------------------------------------> */}
@@ -259,6 +259,22 @@ const Order = () => {
         </header>
 
         {/* <!-- Table Row --> */}
+        {orderList.map((orderData) => (
+                <article key={orderData.order_id} className="grid p-4 border-b border-solid border-b-[#E4E4E4] grid-cols-8">
+                <p className="text-base font-medium">{orderData.order_id}</p>
+                <p className="text-base font-medium">{orderData.trade_No}</p>
+                <p className="text-base font-medium">{orderData.trade_Date}</p>
+                <p className="text-base font-medium">{orderData.member_Id}</p>
+                <p className="text-base font-medium">{orderData.total_price_with_discount}</p>
+                <p className="text-base font-medium">{orderData.payment_type}</p>
+                <p className="text-base font-medium">{orderData.trade_status}</p>
+                <div className="flex gap-2 text-base font-medium justify-center">
+                    <button onClick={() => openPopup(orderData)} className="point-cursor">
+                        查看詳情
+                    </button>
+                </div>
+            </article>
+        ))}
         {filteredOrders.map((orderData) => (
           <article
             key={orderData.order_id}
