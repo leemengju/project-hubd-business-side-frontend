@@ -14,7 +14,7 @@ export function ExportButton({ children }) {
 const SearchButton = ({ onClick }) => {
   return (
     <button
-      className="mt-3 flex justify-center items-center bg-gray-500 rounded-none cursor-pointer border-[none] h-[58px] w-[58px]"
+      className="mt-3 flex justify-center items-center bg-brandBlue-normal rounded-none cursor-pointer border-[none] h-[58px] w-[58px]"
       aria-label="Search"
     >
       <SearchIcon />

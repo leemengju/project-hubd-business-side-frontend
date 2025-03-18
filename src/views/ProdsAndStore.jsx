@@ -209,7 +209,7 @@ const Products = () => {
             </Select>
 
             <Input placeholder="搜尋商品..." className="flex-grow" />
-            <Button className="bg-gray-700 text-white">搜尋</Button>
+            <Button className="bg-brandBlue-normal text-white">搜尋</Button>
           </div>
 
           {/* 商品列表 Table */}
