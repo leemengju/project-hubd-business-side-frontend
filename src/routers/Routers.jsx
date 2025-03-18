@@ -7,6 +7,7 @@ import Auth from "../layouts/Auth";
 const Member = lazy(() => import("../views/Member"));
 const Home = lazy(() => import("../views/Home"));
 const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
+const Products = lazy(() => import("../views/Products"));
 const Store = lazy(() => import("../views/Store"));
 const CashFlow = lazy(() => import("../views/CashFlow"));
 const Marketing = lazy(() => import("../views/Marketing"));
@@ -15,6 +16,7 @@ const OrderTest = lazy(() => import("../views/Order_test"));
 const Setting = lazy(() => import("../views/Setting"));
 const Login = lazy(() => import("../views/auth/Login"));
 const Register = lazy(() => import("../views/auth/Register"));
+const PasswordForget = lazy(() => import("../views/auth/PasswordForget"));
 
 
 // Loading 畫面（避免白屏）
@@ -27,14 +29,15 @@ const AppRouter = () => {
         <Routes>
           {/* 這是 有sidebar 的基底模板 */}
           <Route path="/" element={<AppLayout />}>
-            <Route index element={<Home />} />
+            <Route index element={<Order />} />
+            <Route path="order" element={<Order />} />
+            <Route path="order_test" element={<OrderTest />} />
             <Route path="prods-and-store" element={<ProdsAndStore />} />
+            <Route path="products" element={<Products />} />
             <Route path="store" element={<Store />} />
             <Route path="cash-flow" element={<CashFlow />} />
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
-            <Route path="order" element={<Order />} />
-            <Route path="order_test" element={<OrderTest />} />
             <Route path="setting" element={<Setting />} />
            
           </Route>
@@ -43,6 +46,8 @@ const AppRouter = () => {
           <Route path="auth" element={<Auth />}>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="password-forget" element={<PasswordForget />} />
+
           </Route>
         </Routes>
       </Suspense>
