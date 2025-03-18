@@ -4,14 +4,18 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ProductImageUpload from "./ProductImageUpload";
+import { validators } from "tailwind-merge";
 
 const COLORS = [
-  { name: "黑色", value: "black", className: "bg-black" },
-  { name: "灰色", value: "gray", className: "bg-gray-400" },
-  { name: "白色", value: "white", className: "bg-white border border-gray-300" },
+  { name: "黑色", value: "Black", className: "bg-black" },
+  { name: "灰色", value: "Gray", className: "bg-gray-400" },
+  { name: "白色", value: "White", className: "bg-white border border-gray-300" },
 ];
 
-const SIZES = ["L", "M", "S"];
+const SIZES = [
+  { name: "L", value: "L" },
+  { name: "M", value: "M" },
+  { name: "S", value: "S" }];
 
 const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProductImages }) => {
 
@@ -73,8 +77,8 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
             <SelectValue placeholder="選擇分類" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="clothing">服飾</SelectItem>
-            <SelectItem value="accessory">飾品</SelectItem>
+            <SelectItem value="服飾">服飾</SelectItem>
+            <SelectItem value="飾品">飾品</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -90,11 +94,11 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
               <SelectValue placeholder="選擇子分類" />
             </SelectTrigger>
             <SelectContent>
-              {productInfo.category === "clothing" ? (
+              {productInfo.category === "服飾" ? (
                 <>
-                  <SelectItem value="tshirt">短袖</SelectItem>
-                  <SelectItem value="longsleeve">長袖</SelectItem>
-                  <SelectItem value="jacket">夾克</SelectItem>
+                  <SelectItem value="短袖">短袖</SelectItem>
+                  <SelectItem value="長袖">長袖</SelectItem>
+                  <SelectItem value="夾克">夾克</SelectItem>
                 </>
               ) : (
                 <>
@@ -162,6 +166,7 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
                   key={color.value}
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${color.className} ${spec.color === color.value ? "ring-2 ring-red-500" : ""
                     }`}
+                  value={color.value}
                   onClick={() => updateSpecification(spec.id, "color", color.value)}
                 ></button>
               ))}
@@ -174,12 +179,13 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
             <div className="flex gap-2 ml-2">
               {SIZES.map((size) => (
                 <button
-                  key={size}
-                  className={`w-10 h-10 px-py border rounded-md ${spec.size === size ? "border-red-500 text-red-500" : "border-gray-300"
-                    }`}
-                  onClick={() => updateSpecification(spec.id, "size", size)}
+                  key={size.value}
+                  className={`w-10 h-10 px-py border rounded-md ${spec.size === size.value ? "border-red-500 text-red-500" : "border-gray-300"}`}
+                  value={size.value}
+                  onClick={() => updateSpecification(spec.id, "size", size.value)}  // 只傳遞 value
                 >
-                  {size}
+                  {size.name} 
+              
                 </button>
               ))}
             </div>

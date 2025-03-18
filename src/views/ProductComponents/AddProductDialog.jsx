@@ -11,7 +11,7 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
   const [isOpen, setIsOpen] = useState(false); // 控制 Dialog 開關
   const [showConfirm, setShowConfirm] = useState(false); // 控制「關閉前警告框」
   const [step, setStep] = useState(1);
-  const [productInfo, setProductInfo] = useState(editProduct ||{
+  const [productInfo, setProductInfo] = useState(editProduct || {
     name: "",
     description: "",
     price: "",
@@ -68,50 +68,54 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
     try {
       const formData = new FormData();
       formData.append("product_name", productInfo.name);
-      formData.append("category_id", productInfo.category);
+      formData.append("parent_category", productInfo.category);
+      formData.append("child_category", productInfo.subcategory);
       formData.append("product_price", productInfo.price);
       formData.append("product_description", productInfo.description);
       formData.append("product_status", productInfo.status);
-  
+
       // 上傳規格
       productInfo.specifications.forEach((spec, index) => {
-        formData.append(`specifications[${index}][product_size]`, spec.product_size);
-        formData.append(`specifications[${index}][product_color]`, spec.product_color);
-        formData.append(`specifications[${index}][product_stock]`, spec.product_stock);
+        formData.append(`specifications[${index}][product_size]`, spec.size || "");
+        formData.append(`specifications[${index}][product_color]`, spec.color || "");
+        formData.append(`specifications[${index}][product_stock]`, spec.stock || 0);
       });
-  
+
       // 上傳商品須知
-      formData.append("material", productInfo.material);
-      formData.append("specification", productInfo.specification);
-      formData.append("shipping", productInfo.shipping);
-      formData.append("additional", productInfo.additional);
-  
-      // 上傳商品圖片（含順序和 alt text）
-      productImages.forEach((file, index) => {
-        formData.append(`images[${index}]`, file);
-        formData.append(`images[${index}][product_display_order]`, index + 1);
-        formData.append(`images[${index}][product_alt_text]`, productInfo.name);
+      formData.append("material", productInfo.material || "");
+      formData.append("specification", productInfo.specification || "");
+      formData.append("shipping", productInfo.shipping || "");
+      formData.append("additional", productInfo.additional || "");
+
+      // 確保 `productImages` 是 `File` 類型
+      productImages.forEach((image, index) => {
+        formData.append(`images[${index}]`, image.file); 
       });
-  
-      // 上傳展示圖（含順序和 alt text）
-      demoImages.forEach((file, index) => {
-        formData.append(`display_images[${index}]`, file);
-        formData.append(`display_images[${index}][product_display_order]`, index + 1);
-        formData.append(`display_images[${index}][product_alt_text]`, productInfo.name);
+
+      // 確保 `demoImages` 是 `File` 類型
+      demoImages.forEach((image, index) => {
+        formData.append(`display_images[${index}]`, image.file); 
       });
-  
+
       const response = await fetch("http://localhost:8000/api/products", {
         method: "POST",
         body: formData,
+        headers: {
+          "Accept": "application/json",
+        },
+        credentials: "include",
       });
-  
-      if (!response.ok) {
-        throw new Error("商品上傳失敗");
+
+      const data = await response.json();
+      console.log("成功:", data);
+
+      if (response.ok) {
+        alert("商品上傳成功！");
+        setIsOpen(false);
+        setEditProduct(null);
+      } else {
+        alert("上傳失敗，請檢查輸入內容");
       }
-  
-      alert("商品上傳成功！");
-      setIsOpen(false);
-      setEditProduct(null);
     } catch (error) {
       console.error("上傳失敗:", error);
       alert("上傳失敗，請稍後再試");
@@ -172,19 +176,19 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
 
               {/* 內容區塊（可滾動） */}
               <TabsContent value="1">
-                <ProductBasicInfo 
-                  productInfo={productInfo} 
-                  setProductInfo={setProductInfo} 
-                  productImages={productImages} 
-                  setProductImages={setProductImages} 
+                <ProductBasicInfo
+                  productInfo={productInfo}
+                  setProductInfo={setProductInfo}
+                  productImages={productImages}
+                  setProductImages={setProductImages}
                 />
               </TabsContent>
               <TabsContent value="2">
-                <ProductDescription 
-                  productInfo={productInfo} 
-                  setProductInfo={setProductInfo} 
-                  demoImages={demoImages} 
-                  setDemoImages={setDemoImages} 
+                <ProductDescription
+                  productInfo={productInfo}
+                  setProductInfo={setProductInfo}
+                  demoImages={demoImages}
+                  setDemoImages={setDemoImages}
                 />
               </TabsContent>
             </ScrollArea>
