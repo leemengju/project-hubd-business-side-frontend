@@ -814,88 +814,66 @@ const MarketingModal = ({
             <div className="p-4 overflow-y-auto flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 狀態選擇 */}
-                <div className="sm:col-span-2">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="status">狀態</Label>
-                    <div className="flex justify-between items-center mb-2">
-                      <Select
-                        value={isExpired(formData.end_date) ? 'disabled' : (formData.status || 'active')}
-                        onValueChange={(value) => {
-                          // 如果項目已過期但嘗試設置為啟用，則給出警告
-                          if (value === 'active' && isExpired(formData.end_date)) {
-                            setFormErrors({
-                              ...formErrors,
-                              status: '已過期項目無法設置為啟用狀態，請先修改結束日期'
-                            });
-                            toast.error('已過期項目無法設置為啟用狀態');
-                            return;
-                          }
-                          
-                          handleFormChange('status', value);
-                          // 清除此欄位的錯誤
-                          if (formErrors.status) {
-                            const newErrors = { ...formErrors };
-                            delete newErrors.status;
-                            setFormErrors(newErrors);
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-full md:w-60">
-                          <SelectValue placeholder="請選擇狀態" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                              <span>{type === 'coupons' ? '啟用' : '進行中'}</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="disabled">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-gray-500"></div>
-                              <span>{type === 'coupons' ? '停用' : '已停用'}</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="status">狀態</Label>
+                  <Select 
+                    value={formData.status || 'active'}
+                    onValueChange={(value) => {
+                      // 檢查如果狀態設為active，但項目已過期
+                      if (value === 'active' && isExpired(formData.end_date)) {
+                        toast.error('已過期項目無法設為啟用狀態，請先修改結束日期');
+                        return;
+                      }
                       
-                      {/* 狀態指示器 */}
-                      <div className={cn(
-                        "px-2 py-1 rounded-full text-xs font-medium",
-                        isExpired(formData.end_date) ? "bg-red-100 text-red-800" :
-                        isScheduled(formData.start_date) && formData.status === 'active' ? "bg-blue-100 text-blue-800" :
-                        formData.status === 'active' ? "bg-green-100 text-green-800" :
-                        "bg-gray-100 text-gray-800"
-                      )}>
-                        {isExpired(formData.end_date) ? 
-                          (type === 'coupons' ? '已過期' : '已結束') :
-                          isScheduled(formData.start_date) && formData.status === 'active' ? 
-                          (type === 'coupons' ? '排程中' : '即將開始') : 
-                          formData.status === 'active' ? (type === 'coupons' ? '啟用' : '進行中') : 
-                          (type === 'coupons' ? '停用' : '已停用')}
-                      </div>
-                    </div>
-                    
-                    {formErrors.status && <p className="text-red-500 text-sm">{formErrors.status}</p>}
-                    {isExpired(formData.end_date) && (
-                      <p className="text-amber-600 text-sm mt-1">
-                        <AlertTriangle className="inline-block w-4 h-4 mr-1" />
-                        {type === 'coupons' ? '此優惠券已過期' : '此活動已結束'}（自動判定為停用狀態）
-                      </p>
-                    )}
-                  </div>
+                      setFormData({...formData, status: value});
+                    }}
+                  >
+                    <SelectTrigger className={formErrors.status ? "border-red-500" : ""}>
+                      <SelectValue placeholder="選擇狀態" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">啟用</SelectItem>
+                      <SelectItem value="disabled">停用</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isExpired(formData.end_date) && formData.status === 'active' && (
+                    <p className="text-amber-500 text-sm flex items-center">
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      此{type === 'coupons' ? '優惠券' : '活動'}已過期，無法設為啟用狀態
+                    </p>
+                  )}
+                  {isScheduled(formData.start_date) && (
+                    <p className="text-blue-500 text-sm flex items-center">
+                      <AlertCircleIcon className="h-4 w-4 mr-1" />
+                      此{type === 'coupons' ? '優惠券' : '活動'}尚未開始，將在開始日期後自動啟用
+                    </p>
+                  )}
+                  {formErrors.status && <p className="text-red-500 text-sm">{formErrors.status}</p>}
                 </div>
                 
-                {/* 日期錯誤提示 */}
-                {dateError && (
-                  <div className="p-3 rounded-md bg-destructive/10 text-destructive flex items-center gap-2">
-                    <AlertCircleIcon className="h-4 w-4" />
-                    <span className="text-sm">{dateError}</span>
+                {/* 允許與其他優惠併用 */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="can_combine" 
+                      checked={formData.can_combine || false}
+                      onCheckedChange={(checked) => {
+                        setFormData({...formData, can_combine: checked});
+                      }}
+                    />
+                    <Label htmlFor="can_combine" className="font-normal">
+                      允許與其他優惠併用
+                    </Label>
                   </div>
-                )}
+                  <p className="text-sm text-gray-500">
+                    {type === 'coupons' 
+                      ? '若勾選，此優惠券可以與行銷活動折扣一起使用'
+                      : '若勾選，此活動可以與優惠券一起使用'}
+                  </p>
+                </div>
 
+                {/* 適用對象選擇 */}
                 {type === 'coupons' ? (
-                  // 優惠券表單
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="title">優惠券名稱</Label>

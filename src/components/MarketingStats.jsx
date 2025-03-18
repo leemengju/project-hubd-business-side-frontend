@@ -32,11 +32,21 @@ const StatsCard = ({ title, value, description, icon, iconBgColor }) => {
 };
 
 const MarketingStats = ({ coupons = [], campaigns = [] }) => {
-  // 計算活躍優惠券數量
-  const activeCoupons = coupons.filter(coupon => new Date(coupon.end_date) > new Date()).length;
+  // 計算優惠券狀態數量
+  const couponStatusCounts = {
+    active: coupons.filter(coupon => coupon.calculated_status === 'active').length,
+    disabled: coupons.filter(coupon => coupon.calculated_status === 'disabled').length,
+    expired: coupons.filter(coupon => coupon.calculated_status === 'expired').length,
+    scheduled: coupons.filter(coupon => coupon.calculated_status === 'scheduled').length
+  };
   
-  // 計算活躍活動數量
-  const activeCampaigns = campaigns.filter(campaign => new Date(campaign.end_date) > new Date()).length;
+  // 計算活動狀態數量
+  const campaignStatusCounts = {
+    active: campaigns.filter(campaign => campaign.calculated_status === 'active').length,
+    disabled: campaigns.filter(campaign => campaign.calculated_status === 'disabled').length,
+    expired: campaigns.filter(campaign => campaign.calculated_status === 'expired').length,
+    scheduled: campaigns.filter(campaign => campaign.calculated_status === 'scheduled').length
+  };
 
   // 統計優惠券類型分佈
   const couponTypes = coupons.reduce((acc, coupon) => {
@@ -44,6 +54,24 @@ const MarketingStats = ({ coupons = [], campaigns = [] }) => {
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
+
+  // 獲取最受歡迎的折扣類型
+  const getMostPopularDiscountType = (types) => {
+    if (Object.keys(types).length === 0) return "尚無資料";
+    
+    const sortedTypes = Object.entries(types).sort((a, b) => b[1] - a[1]);
+    const [type, _] = sortedTypes[0];
+    
+    // 中文化顯示
+    const typeNames = {
+      'percentage': '百分比折扣',
+      'fixed': '固定金額折扣',
+      'shipping': '免運費',
+      'buy_x_get_y': '買X送Y'
+    };
+    
+    return typeNames[type] || type;
+  };
 
   // 統計優惠券使用者範圍
   const targetedUsers = coupons.reduce((sum, coupon) => sum + (coupon.users?.length || 0), 0);
@@ -53,20 +81,20 @@ const MarketingStats = ({ coupons = [], campaigns = [] }) => {
       <StatsCard
         title="總優惠券數"
         value={coupons.length}
-        description={`其中 ${activeCoupons} 個優惠券處於活躍狀態`}
+        description={`啟用中: ${couponStatusCounts.active} | 排程中: ${couponStatusCounts.scheduled} | 已過期: ${couponStatusCounts.expired}`}
         icon={<Tag className="h-4 w-4 text-brandBlue-normal" />}
         iconBgColor="bg-brandBlue-light"
       />
       <StatsCard
         title="總活動數"
         value={campaigns.length}
-        description={`其中 ${activeCampaigns} 個活動正在進行中`}
+        description={`進行中: ${campaignStatusCounts.active} | 排程中: ${campaignStatusCounts.scheduled} | 已結束: ${campaignStatusCounts.expired}`}
         icon={<Calendar className="h-4 w-4 text-blue-500" />}
         iconBgColor="bg-blue-50"
       />
       <StatsCard
         title="最受歡迎折扣類型"
-        value={Object.entries(couponTypes).sort((a, b) => b[1] - a[1])[0]?.[0] || "尚無資料"}
+        value={getMostPopularDiscountType(couponTypes)}
         description="根據已建立的優惠券類型統計"
         icon={<Percent className="h-4 w-4 text-green-500" />}
         iconBgColor="bg-green-50"
@@ -79,16 +107,16 @@ const MarketingStats = ({ coupons = [], campaigns = [] }) => {
         iconBgColor="bg-purple-50"
       />
       <StatsCard
-        title="預估轉換率"
-        value="12.5%"
-        description="優惠券和行銷活動帶來的轉換率評估"
+        title="即將到期優惠"
+        value={`${couponStatusCounts.active + campaignStatusCounts.active}`}
+        description="目前啟用中的優惠券與活動總數"
         icon={<TrendingUp className="h-4 w-4 text-orange-500" />}
         iconBgColor="bg-orange-50"
       />
       <StatsCard
-        title="平均訂單金額"
-        value="NT$ 1,250"
-        description="使用優惠的平均訂單金額"
+        title="預計上線優惠"
+        value={`${couponStatusCounts.scheduled + campaignStatusCounts.scheduled}`}
+        description="排程中的優惠券與活動總數"
         icon={<ShoppingBag className="h-4 w-4 text-red-500" />}
         iconBgColor="bg-red-50"
       />

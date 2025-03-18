@@ -444,6 +444,39 @@ const Marketing = () => {
     );
   };
   
+  // 狀態標籤
+  const StatusBadge = ({ status }) => {
+    const statusConfig = {
+      active: {
+        label: '啟用中',
+        className: 'bg-green-100 text-green-800'
+      },
+      disabled: {
+        label: '已停用',
+        className: 'bg-gray-100 text-gray-800'
+      },
+      expired: {
+        label: '已過期',
+        className: 'bg-red-100 text-red-800'
+      },
+      scheduled: {
+        label: '排程中',
+        className: 'bg-blue-100 text-blue-800'
+      }
+    };
+
+    const config = statusConfig[status] || {
+      label: '未知',
+      className: 'bg-gray-100 text-gray-800'
+    };
+
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
+        {config.label}
+      </span>
+    );
+  };
+
   // 渲染詳細信息模態窗口
   const renderDetailModal = () => {
     if (!showDetail || !detailItem) return null;
@@ -572,6 +605,22 @@ const Marketing = () => {
                     </div>
                   </div>
                 )}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">狀態：</span>
+                    <StatusBadge status={detailItem.calculated_status} />
+                  </div>
+                  {detailItem.calculated_status === 'expired' && (
+                    <p className="text-sm text-red-600">
+                      此{isCoupon ? '優惠券' : '活動'}已過期，無法修改
+                    </p>
+                  )}
+                  {detailItem.calculated_status === 'scheduled' && (
+                    <p className="text-sm text-blue-600">
+                      此{isCoupon ? '優惠券' : '活動'}尚未開始，將在開始日期後自動啟用
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
@@ -591,11 +640,7 @@ const Marketing = () => {
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium text-gray-500">狀態</h4>
                   <p className="text-base">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      getStatusStyles(detailItem.end_date)
-                    }`}>
-                      {new Date(detailItem.end_date) > new Date() ? "使用中" : "已過期"}
-                    </span>
+                    <StatusBadge status={detailItem.calculated_status} />
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -799,15 +844,7 @@ const Marketing = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            getStatusStyles(coupon.end_date)
-                          }`}>
-                            {!coupon.end_date 
-                              ? "永久有效" 
-                              : new Date(coupon.end_date) > new Date() 
-                                ? "使用中" 
-                                : "已過期"}
-                          </span>
+                          <StatusBadge status={coupon.calculated_status} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Button 
@@ -894,11 +931,7 @@ const Marketing = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            getStatusStyles(campaign.end_date)
-                          }`}>
-                            {new Date(campaign.end_date) > new Date() ? "使用中" : "已過期"}
-                          </span>
+                          <StatusBadge status={campaign.calculated_status} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Button 
