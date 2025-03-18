@@ -128,7 +128,7 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
           <Button onClick={() => {
             setIsOpen(true);
             setEditProduct(null);
-          }} className="bg-blue-500 text-white">+ 新增商品</Button>
+          }} className="bg-brandBlue-normal text-white">+ 新增商品</Button>
         </DialogTrigger>
         <DialogContent className=" [&>button]:hidden fixed left-100 right-0 translate-x-0 h-full w-[596px] overflow-y-auto px-6 bg-white shadow-lg">
 

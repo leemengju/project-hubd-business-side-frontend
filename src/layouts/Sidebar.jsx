@@ -2,16 +2,42 @@ import { Link } from "react-router-dom";
 import logo from "../assets/images/home_logo.png";
 
 const Sidebar = () => {
+ const  changeActive = (e) => {
+    // Select all elements with the class 'sidebarTag'
+    let sidebarTag = document.querySelectorAll('.sidebarTag');
+    
+    // Remove 'active' class from all sidebar tags
+    sidebarTag.forEach((tag) => {
+      tag.classList.remove('active');
+      tag.className = 'sidebarTag h-[50px] ps-5 flex justify-center items-center';
+    });
+  
+    // Add 'active' class to the focused element
+    e.currentTarget.classList.add('active');
+  
+    // Change the focused tag's class to active state
+    e.currentTarget.className = 'sidebarTag w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center';
+  };
+  
+  // Adding event listeners to focus events
+  document.querySelectorAll('.sidebarTag').forEach(tag => {
+    tag.addEventListener('focus', changeActive);
+  });
+
   return (
     <div className="w-[280px] h-[1040px] p-[30px] bg-brandBlue-light flex flex-col items-center justify-start gap-[24px] rounded-3xl">
-      <Link to="/" className="mb-5">
+      {/* home&logo */}
+      <Link to="order" className="mb-5">
         <img src={logo} className="w-[175px]" alt="Logo" />
       </Link>
+       {/* sidebarTag */}
       <div className="flex flex-col justify-start items-start gap-5">
         <div className="w-[220px] flex flex-col justify-start items-start gap-5 text-brandGray-normal font-normal">
-          <Link
+          {/* Dashboard */}
+          {/* <Link
             to="/"
-            className="w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center"
+  className="w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center"
+            
           >
             <span>
               <svg
@@ -27,10 +53,13 @@ const Sidebar = () => {
               </svg>
             </span>
             &nbsp;&nbsp;Dashboard
-          </Link>
+          </Link> */}
+          {/* order */}
           <Link
             to="/order"
-            className="h-[50px] ps-5  flex justify-center items-center"
+            className="sidebarTag w-full h-[50px] ps-5 rounded-e-md border-s-4 border-brandBlue-normal text-brandBlue-normal font-semibold text-[16px] bg-brandGray-light flex items-center"
+            onClick={changeActive}
+            
           >
             <span>
               <svg
@@ -49,9 +78,11 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;訂單管理
           </Link>
+           {/* prods-and-store */}
           <Link
             to="/prods-and-store"
-            className="h-[50px] ps-5  flex justify-center items-center"
+            className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
+            onClick={changeActive}
           >
             <span>
               <svg
@@ -74,9 +105,11 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;商品及賣場管理
           </Link>
+           {/* cash-flow */}
           <Link
             to="/cash-flow"
-            className="h-[50px] ps-5  flex justify-center items-center"
+            className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
+            onClick={changeActive}
           >
             <span>
               <svg
@@ -100,9 +133,11 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;金流管理
           </Link>
+          {/* member */}
           <Link
             to="member"
-            className="h-[50px] ps-5  flex justify-center items-center"
+            className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
+            onClick={changeActive}
           >
             <span>
               <svg
@@ -146,9 +181,11 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;會員資訊管理
           </Link>
+           {/* marketing */}
           <Link
             to="/marketing"
-            className="h-[50px] ps-5  flex justify-center items-center"
+            className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
+            onClick={changeActive}
           >
             <span>
               <svg
@@ -165,10 +202,12 @@ const Sidebar = () => {
             </span>
             &nbsp;&nbsp;行銷管理
           </Link>
+           {/* setting */}
           <Link
             to="setting"
-            className="h-[50px] ps-5  flex justify-center items-center"
-          >
+            className="sidebarTag h-[50px] ps-5  flex justify-center items-center"
+            onClick={changeActive}
+         >
             <span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -189,5 +228,6 @@ const Sidebar = () => {
     </div>
   );
 };
+
 
 export default Sidebar;
