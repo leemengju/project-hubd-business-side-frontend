@@ -72,39 +72,43 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
       formData.append("product_price", productInfo.price);
       formData.append("product_description", productInfo.description);
       formData.append("product_status", productInfo.status);
-
+  
       // 上傳規格
       productInfo.specifications.forEach((spec, index) => {
         formData.append(`specifications[${index}][product_size]`, spec.product_size);
         formData.append(`specifications[${index}][product_color]`, spec.product_color);
         formData.append(`specifications[${index}][product_stock]`, spec.product_stock);
       });
-
+  
       // 上傳商品須知
       formData.append("material", productInfo.material);
       formData.append("specification", productInfo.specification);
       formData.append("shipping", productInfo.shipping);
       formData.append("additional", productInfo.additional);
-
-      // 上傳商品圖片
+  
+      // 上傳商品圖片（含順序和 alt text）
       productImages.forEach((file, index) => {
         formData.append(`images[${index}]`, file);
+        formData.append(`images[${index}][product_display_order]`, index + 1);
+        formData.append(`images[${index}][product_alt_text]`, productInfo.name);
       });
-
-      // 上傳展示圖
+  
+      // 上傳展示圖（含順序和 alt text）
       demoImages.forEach((file, index) => {
         formData.append(`display_images[${index}]`, file);
+        formData.append(`display_images[${index}][product_display_order]`, index + 1);
+        formData.append(`display_images[${index}][product_alt_text]`, productInfo.name);
       });
-
+  
       const response = await fetch("http://localhost:8000/api/products", {
         method: "POST",
         body: formData,
       });
-
+  
       if (!response.ok) {
         throw new Error("商品上傳失敗");
       }
-
+  
       alert("商品上傳成功！");
       setIsOpen(false);
       setEditProduct(null);

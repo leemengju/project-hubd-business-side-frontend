@@ -30,7 +30,7 @@ const AppRouter = () => {
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Order />} />
             <Route path="order" element={<Order />} />
-            <Route path="order_test" element={<OrderTest />} />
+            {/* <Route path="order_test" element={<OrderTest />} /> */}
             <Route path="prods-and-store" element={<ProdsAndStore />} />
             <Route path="products" element={<Products />} />
             <Route path="store" element={<Store />} />
