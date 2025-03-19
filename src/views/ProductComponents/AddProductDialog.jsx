@@ -62,6 +62,22 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
     setIsOpen(false); // 關閉 Dialog
     setEditProduct(null); // 清除編輯商品
     setShowConfirm(false); // 關閉警告框
+    setProductInfo({  // 重置表單
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      subcategory: "",
+      status: "active",
+      specifications: [],
+      material: "",
+      specification: "",
+      shipping: "",
+      additional: "",
+    });
+    setProductImages([]); // 清空商品圖片
+    setDemoImages([]); // 清空展示圖片
+    setStep(1);
   };
 
   const handleSubmit = async () => {
@@ -111,8 +127,26 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
 
       if (response.ok) {
         alert("商品上傳成功！");
+         // ✅ 清空所有表單數據
+         setProductInfo({  // 重置表單
+          name: "",
+          description: "",
+          price: "",
+          category: "",
+          subcategory: "",
+          status: "active",
+          specifications: [],
+          material: "",
+          specification: "",
+          shipping: "",
+          additional: "",
+        });
+        setProductImages([]); // 清空商品圖片
+        setDemoImages([]); // 清空展示圖片
+        setStep(1);
         setIsOpen(false);
         setEditProduct(null);
+        
       } else {
         alert("上傳失敗，請檢查輸入內容");
       }

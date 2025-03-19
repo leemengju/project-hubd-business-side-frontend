@@ -102,8 +102,8 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
                 </>
               ) : (
                 <>
-                  <SelectItem value="isekai2000">異世界2000</SelectItem>
-                  <SelectItem value="crystal">水晶晶系列</SelectItem>
+                  <SelectItem value="異世界2000">異世界2000</SelectItem>
+                  <SelectItem value="水晶晶系列">水晶晶系列</SelectItem>
                 </>
               )}
             </SelectContent>
