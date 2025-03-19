@@ -54,7 +54,7 @@ const Member = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">會員資料列表</h1>
-      <Button variant="outline" className="mb-4">
+      <Button variant="outline" className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full ">
         匯出
       </Button>
 
