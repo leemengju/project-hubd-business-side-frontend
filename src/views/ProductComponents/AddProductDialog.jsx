@@ -11,7 +11,7 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
   const [isOpen, setIsOpen] = useState(false); // 控制 Dialog 開關
   const [showConfirm, setShowConfirm] = useState(false); // 控制「關閉前警告框」
   const [step, setStep] = useState(1);
-  const [productInfo, setProductInfo] = useState(editProduct ||{
+  const [productInfo, setProductInfo] = useState(editProduct || {
     name: "",
     description: "",
     price: "",
@@ -62,52 +62,94 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
     setIsOpen(false); // 關閉 Dialog
     setEditProduct(null); // 清除編輯商品
     setShowConfirm(false); // 關閉警告框
+    setProductInfo({  // 重置表單
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      subcategory: "",
+      status: "active",
+      specifications: [],
+      material: "",
+      specification: "",
+      shipping: "",
+      additional: "",
+    });
+    setProductImages([]); // 清空商品圖片
+    setDemoImages([]); // 清空展示圖片
+    setStep(1);
   };
 
   const handleSubmit = async () => {
     try {
       const formData = new FormData();
       formData.append("product_name", productInfo.name);
-      formData.append("category_id", productInfo.category);
+      formData.append("parent_category", productInfo.category);
+      formData.append("child_category", productInfo.subcategory);
       formData.append("product_price", productInfo.price);
       formData.append("product_description", productInfo.description);
       formData.append("product_status", productInfo.status);
 
       // 上傳規格
       productInfo.specifications.forEach((spec, index) => {
-        formData.append(`specifications[${index}][product_size]`, spec.product_size);
-        formData.append(`specifications[${index}][product_color]`, spec.product_color);
-        formData.append(`specifications[${index}][product_stock]`, spec.product_stock);
+        formData.append(`specifications[${index}][product_size]`, spec.size || "");
+        formData.append(`specifications[${index}][product_color]`, spec.color || "");
+        formData.append(`specifications[${index}][product_stock]`, spec.stock || 0);
       });
 
       // 上傳商品須知
-      formData.append("material", productInfo.material);
-      formData.append("specification", productInfo.specification);
-      formData.append("shipping", productInfo.shipping);
-      formData.append("additional", productInfo.additional);
+      formData.append("material", productInfo.material || "");
+      formData.append("specification", productInfo.specification || "");
+      formData.append("shipping", productInfo.shipping || "");
+      formData.append("additional", productInfo.additional || "");
 
-      // 上傳商品圖片
-      productImages.forEach((file, index) => {
-        formData.append(`images[${index}]`, file);
+      // 確保 `productImages` 是 `File` 類型
+      productImages.forEach((image, index) => {
+        formData.append(`images[${index}]`, image.file); 
       });
 
-      // 上傳展示圖
-      demoImages.forEach((file, index) => {
-        formData.append(`display_images[${index}]`, file);
+      // 確保 `demoImages` 是 `File` 類型
+      demoImages.forEach((image, index) => {
+        formData.append(`display_images[${index}]`, image.file); 
       });
 
       const response = await fetch("http://localhost:8000/api/products", {
         method: "POST",
         body: formData,
+        headers: {
+          "Accept": "application/json",
+        },
+        credentials: "include",
       });
 
-      if (!response.ok) {
-        throw new Error("商品上傳失敗");
-      }
+      const data = await response.json();
+      console.log("成功:", data);
 
-      alert("商品上傳成功！");
-      setIsOpen(false);
-      setEditProduct(null);
+      if (response.ok) {
+        alert("商品上傳成功！");
+         // ✅ 清空所有表單數據
+         setProductInfo({  // 重置表單
+          name: "",
+          description: "",
+          price: "",
+          category: "",
+          subcategory: "",
+          status: "active",
+          specifications: [],
+          material: "",
+          specification: "",
+          shipping: "",
+          additional: "",
+        });
+        setProductImages([]); // 清空商品圖片
+        setDemoImages([]); // 清空展示圖片
+        setStep(1);
+        setIsOpen(false);
+        setEditProduct(null);
+        
+      } else {
+        alert("上傳失敗，請檢查輸入內容");
+      }
     } catch (error) {
       console.error("上傳失敗:", error);
       alert("上傳失敗，請稍後再試");
@@ -128,7 +170,7 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
           <Button onClick={() => {
             setIsOpen(true);
             setEditProduct(null);
-          }} className="bg-blue-500 text-white">+ 新增商品</Button>
+          }} className="bg-brandBlue-normal text-white">+ 新增商品</Button>
         </DialogTrigger>
         <DialogContent className=" [&>button]:hidden fixed left-100 right-0 translate-x-0 h-full w-[596px] overflow-y-auto px-6 bg-white shadow-lg">
 
@@ -168,19 +210,19 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
 
               {/* 內容區塊（可滾動） */}
               <TabsContent value="1">
-                <ProductBasicInfo 
-                  productInfo={productInfo} 
-                  setProductInfo={setProductInfo} 
-                  productImages={productImages} 
-                  setProductImages={setProductImages} 
+                <ProductBasicInfo
+                  productInfo={productInfo}
+                  setProductInfo={setProductInfo}
+                  productImages={productImages}
+                  setProductImages={setProductImages}
                 />
               </TabsContent>
               <TabsContent value="2">
-                <ProductDescription 
-                  productInfo={productInfo} 
-                  setProductInfo={setProductInfo} 
-                  demoImages={demoImages} 
-                  setDemoImages={setDemoImages} 
+                <ProductDescription
+                  productInfo={productInfo}
+                  setProductInfo={setProductInfo}
+                  demoImages={demoImages}
+                  setDemoImages={setDemoImages}
                 />
               </TabsContent>
             </ScrollArea>
