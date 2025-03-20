@@ -5,7 +5,6 @@ import Auth from "../layouts/Auth";
 
 // Code Splitting，減少JS初次載入大小
 const Member = lazy(() => import("../views/Member"));
-const Home = lazy(() => import("../views/Home"));
 const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
 const Products = lazy(() => import("../views/Products"));
 const Store = lazy(() => import("../views/Store"));

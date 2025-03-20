@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,9 +19,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddProductDialog from "./ProductComponents/AddProductDialog";
-import banner1 from "../assets/images/store/banner1.JPG";
-import banner2 from "../assets/images/store/banner2.JPG";
-import banner3 from "../assets/images/store/banner3.JPG";
 
 const Products = () => {
   const [editProduct, setEditProduct] = useState(null); // 追蹤當前要編輯的商品
@@ -45,37 +43,40 @@ const Products = () => {
   ]);
 
   // 賣場輪播圖部分
-  const [blocks, setBlocks] = useState([
-    {
-      id: 1,
-      image: banner1,
-      title: "【 New 】＋寶石吊墜課程＋",
-      description:
-        "比百變怪還百變的課程來了，快快呼朋引伴手牽手一起來 364 把屬於自己的吊墜帶回家吧！",
-      link: "https://www.figma.com/design/5iQ3ObMVlGgy7vlcAc3im5/",
-      isEditing: false,
-    },
-    {
-      id: 2,
-      image: banner2,
-      title: "【 Special 】＋手作花藝課程＋",
-      description: "手作花藝課程，讓你的生活增添一份優雅與浪漫。",
-      link: "https://www.figma.com/design/xxxxxx/",
-      isEditing: false,
-    },
-    {
-      id: 3,
-      image: banner3,
-      title: "【 Hot 】＋手工皮革工作坊＋",
-      description: "探索皮革的魅力，手工製作屬於自己的專屬配件。",
-      link: "https://www.figma.com/design/yyyyyy/",
-      isEditing: false,
-    },
-  ]);
-
+  const [blocks, setBlocks] = useState([]);
   const [errors, setErrors] = useState({});
+  const [originalBlocks, setOriginalBlocks] = useState([]);
 
-  // 更新欄位內容
+  // 取得 banners 資料
+  const fetchBanners = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/api/banners");
+
+      // 轉換 API 回傳格式，使其符合 UI 結構
+      const formattedData = response.data.map((banner) => ({
+        id: banner.banner_id,
+        image: `http://localhost:8000/storage/${banner.banner_img}`, // 後端存圖片的路徑
+        title: banner.banner_title,
+        description: banner.banner_description,
+        link: banner.banner_link,
+        file: null, // 存放上傳的圖片
+        isEditing: false,
+      }));
+
+      console.log(formattedData);
+      setBlocks(formattedData);
+      setOriginalBlocks(formattedData); // 存一份原始資料
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+    }
+  };
+
+  // 初始化時取得 banners
+  useEffect(() => {
+    fetchBanners();
+  }, []);
+
+  // 處理輸入變更
   const handleChange = (id, field, value) => {
     setBlocks((prevBlocks) =>
       prevBlocks.map((block) =>
@@ -85,9 +86,10 @@ const Products = () => {
     validateField(id, field, value);
   };
 
-  // 驗證標題與描述
+  // 驗證標題、描述、連結
   const validateField = (id, field, value) => {
     let newErrors = { ...errors };
+
     if (field === "title") {
       newErrors[id] = {
         ...newErrors[id],
@@ -104,8 +106,8 @@ const Products = () => {
         description:
           value.trim() === ""
             ? "請輸入說明"
-            : value.length > 30
-            ? "最多30字元"
+            : value.length > 65
+            ? "最多65字元"
             : "",
       };
     } else if (field === "link") {
@@ -113,7 +115,21 @@ const Products = () => {
         ...newErrors[id],
         link: value.trim() === "" ? "請輸入連結" : "",
       };
+    } else if (field === "image") {
+      if (value && value.size > 5 * 1024 * 1024) {
+        // 檢查圖片大小是否超過 5MB
+        newErrors[id] = {
+          ...newErrors[id],
+          image: "圖檔不可大於5MB",
+        };
+      } else {
+        // 如果圖片大小符合規範，則移除錯誤訊息
+        if (newErrors[id]) {
+          delete newErrors[id].image;
+        }
+      }
     }
+
     setErrors(newErrors);
   };
 
@@ -129,34 +145,79 @@ const Products = () => {
   // 取消編輯
   const handleCancel = (id) => {
     setBlocks((prevBlocks) =>
-      prevBlocks.map((block) =>
-        block.id === id ? { ...block, isEditing: false } : block
-      )
-    );
-  };
+      prevBlocks.map((block) => {
+        // 找到 fetch 時的原始數據
+        const originalBanner = originalBlocks.find((b) => b.id === id);
 
-  // 確定編輯
-  const handleSave = (id) => {
-    if (errors[id]?.title || errors[id]?.description || errors[id]?.link) {
-      return;
-    }
-    setBlocks((prevBlocks) =>
-      prevBlocks.map((block) =>
-        block.id === id ? { ...block, isEditing: false } : block
-      )
+        return block.id === id
+          ? {
+              ...originalBanner, // 還原原始資料
+              isEditing: false,
+            }
+          : block;
+      })
     );
   };
 
   // 處理圖片上傳
   const handleImageUpload = (id, event) => {
     const file = event.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setBlocks((prevBlocks) =>
-        prevBlocks.map((block) =>
-          block.id === id ? { ...block, image: imageUrl } : block
-        )
+    if (!file) return;
+
+    // 🔹 檢查圖片大小是否超過 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [id]: { ...prevErrors[id], image: "圖檔不可大於 5MB" },
+      }));
+      return;
+    }
+
+    // 🔹 清除錯誤訊息（如果有）
+    setErrors((prevErrors) => {
+      const newErrors = { ...prevErrors };
+      if (newErrors[id]) {
+        delete newErrors[id].image;
+      }
+      return newErrors;
+    });
+
+    // 🔹 產生預覽 URL 並更新 blocks
+    const imageUrl = URL.createObjectURL(file);
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) =>
+        block.id === id ? { ...block, image: imageUrl, file } : block
+      )
+    );
+  };
+
+  // 儲存變更（傳送到後端）
+  const handleSave = async (id) => {
+    const banner = blocks.find((b) => b.id === id);
+    const formData = new FormData();
+
+    formData.append("banner_title", banner.title);
+    formData.append("banner_description", banner.description);
+    formData.append("banner_link", banner.link);
+
+    // 只有當 `file` 存在時才上傳 `banner_img`
+    if (banner.file) {
+      formData.append("banner_img", banner.file);
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8000/api/banners/${id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
+
+      console.log("更新成功", response.data);
+      fetchBanners(); // 重新載入 banners
+    } catch (error) {
+      console.error("更新失敗", error.response?.data);
     }
   };
 
@@ -164,10 +225,21 @@ const Products = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <svg className="inline" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-            <path fill="#252B42" d="M20.6 5.26a2.51 2.51 0 0 0-2.48-2.2H5.885a2.51 2.51 0 0 0-2.48 2.19l-.3 2.47a3.4 3.4 0 0 0 1.16 2.56v8.16a2.5 2.5 0 0 0 2.5 2.5h10.47a2.5 2.5 0 0 0 2.5-2.5v-8.16A3.4 3.4 0 0 0 20.9 7.72Zm-6.59 14.68h-4v-4.08a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5Zm4.73-1.5a1.5 1.5 0 0 1-1.5 1.5h-2.23v-4.08a2.5 2.5 0 0 0-2.5-2.5h-1a2.5 2.5 0 0 0-2.5 2.5v4.08H6.765a1.5 1.5 0 0 1-1.5-1.5v-7.57a3.2 3.2 0 0 0 1.24.24a3.36 3.36 0 0 0 2.58-1.19a.24.24 0 0 1 .34 0a3.36 3.36 0 0 0 2.58 1.19A3.4 3.4 0 0 0 14.6 9.92a.22.22 0 0 1 .16-.07a.24.24 0 0 1 .17.07a3.36 3.36 0 0 0 2.58 1.19a3.2 3.2 0 0 0 1.23-.24Zm-1.23-8.33a2.39 2.39 0 0 1-1.82-.83a1.2 1.2 0 0 0-.92-.43h-.01a1.2 1.2 0 0 0-.92.42a2.476 2.476 0 0 1-3.65 0a1.24 1.24 0 0 0-1.86 0A2.405 2.405 0 0 1 4.1 7.78l.3-2.4a1.52 1.52 0 0 1 1.49-1.32h12.23a1.5 1.5 0 0 1 1.49 1.32l.29 2.36a2.39 2.39 0 0 1-2.395 2.37Z" />
+          <svg
+            className="inline"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="#252B42"
+              d="M20.6 5.26a2.51 2.51 0 0 0-2.48-2.2H5.885a2.51 2.51 0 0 0-2.48 2.19l-.3 2.47a3.4 3.4 0 0 0 1.16 2.56v8.16a2.5 2.5 0 0 0 2.5 2.5h10.47a2.5 2.5 0 0 0 2.5-2.5v-8.16A3.4 3.4 0 0 0 20.9 7.72Zm-6.59 14.68h-4v-4.08a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5Zm4.73-1.5a1.5 1.5 0 0 1-1.5 1.5h-2.23v-4.08a2.5 2.5 0 0 0-2.5-2.5h-1a2.5 2.5 0 0 0-2.5 2.5v4.08H6.765a1.5 1.5 0 0 1-1.5-1.5v-7.57a3.2 3.2 0 0 0 1.24.24a3.36 3.36 0 0 0 2.58-1.19a.24.24 0 0 1 .34 0a3.36 3.36 0 0 0 2.58 1.19A3.4 3.4 0 0 0 14.6 9.92a.22.22 0 0 1 .16-.07a.24.24 0 0 1 .17.07a3.36 3.36 0 0 0 2.58 1.19a3.2 3.2 0 0 0 1.23-.24Zm-1.23-8.33a2.39 2.39 0 0 1-1.82-.83a1.2 1.2 0 0 0-.92-.43h-.01a1.2 1.2 0 0 0-.92.42a2.476 2.476 0 0 1-3.65 0a1.24 1.24 0 0 0-1.86 0A2.405 2.405 0 0 1 4.1 7.78l.3-2.4a1.52 1.52 0 0 1 1.49-1.32h12.23a1.5 1.5 0 0 1 1.49 1.32l.29 2.36a2.39 2.39 0 0 1-2.395 2.37Z"
+            />
           </svg>
-          <span className="ml-2 text-brandBlue-darker  text-[20px] font-['Lexend']">商品＆賣場管理</span>
+          <span className="ml-2 text-brandBlue-darker  text-[20px] font-['Lexend']">
+            商品＆賣場管理
+          </span>
         </div>
       </div>
       {/* Tabs 切換選單 */}
@@ -178,12 +250,14 @@ const Products = () => {
             <TabsTrigger value="carousel">賣場輪播圖</TabsTrigger>
           </TabsList>
           <TabsContent value="products">
-          {/* 新增商品按鈕 & Drawer */}
-          <AddProductDialog editProduct={editProduct} setEditProduct={setEditProduct} />
+            {/* 新增商品按鈕 & Drawer */}
+            <AddProductDialog
+              editProduct={editProduct}
+              setEditProduct={setEditProduct}
+            />
           </TabsContent>
         </div>
         <TabsContent value="products">
-          
           {/* 篩選與搜尋區塊 */}
           <div className="flex gap-2 mb-4">
             <Select>
@@ -231,7 +305,11 @@ const Products = () => {
                   <TableRow key={index}>
                     <TableCell>{product.id}</TableCell>
                     <TableCell>
-                      <img src={product.image} alt="商品" className="w-10 h-10" />
+                      <img
+                        src={product.image}
+                        alt="商品"
+                        className="w-10 h-10"
+                      />
                     </TableCell>
                     <TableCell>{product.name}</TableCell>
                     <TableCell>{product.price}</TableCell>
@@ -257,18 +335,27 @@ const Products = () => {
                           setEditProduct(product);
                         }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z" /></svg>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z"
+                          />
+                        </svg>
                       </Button>
-
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-
-
         </TabsContent>
+
+        {/* 賣場管理 */}
         <TabsContent value="carousel">
           <div className="flex justify-start items-center h-full gap-10">
             {blocks.map((block) => (
@@ -330,6 +417,12 @@ const Products = () => {
                           </svg>
                           <span>點擊變更圖片</span>
                           <span>（建議尺寸 720 * 600 像素）</span>
+
+                          {errors[block.id]?.image && (
+                            <span className="text-[14px] text-brandRed-lightActive">
+                              {errors[block.id]?.image}
+                            </span>
+                          )}
                         </label>
                       </div>
                       <input
@@ -412,7 +505,7 @@ const Products = () => {
                         onClick={() => handleSave(block.id)}
                         className="w-[92px] h-[42px] bg-brandBlue-normal p-3 text-brandBlue-lightLight rounded-lg flex justify-center items-center hover:opacity-80 active:opacity-50"
                       >
-                        確定
+                        儲存
                       </button>
                     </>
                   ) : (
