@@ -17,9 +17,12 @@ const Login = lazy(() => import("../views/auth/Login"));
 const Register = lazy(() => import("../views/auth/Register"));
 const PasswordForget = lazy(() => import("../views/auth/PasswordForget"));
 
-
 // Loading 畫面（避免白屏）
-const Loading = () => <div>Loading...</div>;
+const Loading = () => (
+  <div className="w-screen h-screen flex justify-center items-center font-lexend text-brandBlue-normalDarker text-2xl">
+    <div>Loading...</div>
+  </div>
+);
 
 const AppRouter = () => {
   return (
@@ -38,7 +41,6 @@ const AppRouter = () => {
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
             <Route path="setting" element={<Setting />} />
-           
           </Route>
 
           {/* 這是 登入／註冊 頁們的基底模板 */}
@@ -46,7 +48,6 @@ const AppRouter = () => {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="password-forget" element={<PasswordForget />} />
-
           </Route>
         </Routes>
       </Suspense>
