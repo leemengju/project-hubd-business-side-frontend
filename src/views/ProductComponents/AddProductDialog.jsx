@@ -154,22 +154,6 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
     setIsOpen(false); // 關閉 Dialog
     setEditProduct(null); // 清除編輯商品
     setShowConfirm(false); // 關閉警告框
-    setProductInfo({  // 重置表單
-      name: "",
-      description: "",
-      price: "",
-      category: "",
-      subcategory: "",
-      status: "active",
-      specifications: [],
-      material: "",
-      specification: "",
-      shipping: "",
-      additional: "",
-    });
-    setProductImages([]); // 清空商品圖片
-    setDemoImages([]); // 清空展示圖片
-    setStep(1);
   };
 
   const handleSubmit = async () => {
@@ -299,121 +283,29 @@ const AddProductDialog = ({ editProduct, setEditProduct }) => {
         }
       }
 
-      // 上傳產品展示圖，確保只有有檔案的展示圖被上傳
-      if (demoImages.length > 0) {
-        demoImages.forEach((image, index) => {
-          if (image.file) {
-            formData.append(`display_images[${index}]`, image.file);
-          }
-        });
-      }
+      // 確保 `demoImages` 是 `File` 類型
+      demoImages.forEach((image, index) => {
+        formData.append(`display_images[${index}]`, image.file); 
+      });
 
-      const method = editProduct ? "PUT" : "POST";
-      const url = editProduct
-        ? `http://localhost:8000/api/products/${editProduct.product_id}`
-        : "http://localhost:8000/api/products";
+      const response = await fetch("http://localhost:8000/api/products", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Accept": "application/json",
+        },
+        credentials: "include",
+      });
 
-      console.log("請求方法:", method);
-      console.log("目標URL:", url);
-      
-      // 如果是編輯模式，添加_method參數來支持PUT請求
-      if (editProduct) {
-        formData.append("_method", "PUT");
-        console.log("添加_method=PUT用於模擬PUT請求");
-      }
+      const data = await response.json();
+      console.log("成功:", data);
 
-      // 輸出表單內容到控制台，用於調試
-      const formEntries = {};
-      for (let [key, value] of formData.entries()) {
-        formEntries[key] = value;
-      }
-      console.log("提交的表單數據:", formEntries);
-      
-      if (editProduct) {
-        console.log("編輯商品ID:", editProduct.product_id);
-      }
-
-      try {
-        const response = await fetch(url, {
-          // 使用POST方法，由_method參數來模擬PUT請求
-          method: editProduct ? "POST" : method,
-          body: formData,
-          headers: {
-            "Accept": "application/json",
-          },
-          credentials: "include",
-        });
-  
-        console.log("伺服器回應狀態碼:", response.status);
-        
-        try {
-          const data = await response.json();
-          console.log("伺服器回應:", data);
-  
-          if (response.ok) {
-            alert("商品上傳成功！");
-            // ✅ 清空所有表單數據
-            setProductInfo({
-              name: "",
-              description: "",
-              price: "",
-              category: "",
-              subcategory: "",
-              status: "active",
-              specifications: [],
-              material: "",
-              specification: "",
-              shipping: "",
-              additional: "",
-            });
-            setProductImages([]); // 清空商品圖片
-            setDemoImages([]); // 清空展示圖片
-            setStep(1);
-            setIsOpen(false);
-            setEditProduct(null);
-            
-            // 重新加載商品列表
-            try {
-              console.log("正在重新加載商品列表...");
-              const refreshResponse = await fetch("http://localhost:8000/api/products", {
-                method: "GET",
-                headers: {
-                  "Accept": "application/json",
-                },
-                credentials: "include",
-              });
-              
-              if (refreshResponse.ok) {
-                console.log("商品列表重新加載成功");
-                // 觸發頁面的刷新函數，如果存在的話
-                if (typeof window.refreshProductList === 'function') {
-                  window.refreshProductList();
-                } else {
-                  // 如果沒有全局刷新函數，則重新加載頁面
-                  window.location.reload();
-                }
-              } else {
-                console.error("重新加載商品列表失敗");
-              }
-            } catch (refreshError) {
-              console.error("刷新商品列表時出錯:", refreshError);
-            }
-          } else {
-            console.error("非成功狀態碼:", response.status);
-            alert(`上傳失敗: ${data.message || "請檢查輸入內容"}`);
-            if (data.errors) {
-              const errorMessages = Object.values(data.errors).flat().join('\n');
-              console.error("上傳失敗詳情:", errorMessages);
-              alert(`錯誤詳情:\n${errorMessages}`);
-            }
-          }
-        } catch (jsonError) {
-          console.error("解析回應JSON失敗:", jsonError);
-          alert(`解析伺服器回應失敗: ${jsonError.message}`);
-        }
-      } catch (fetchError) {
-        console.error("網路請求失敗:", fetchError);
-        alert(`網路請求失敗: ${fetchError.message}`);
+      if (response.ok) {
+        alert("商品上傳成功！");
+        setIsOpen(false);
+        setEditProduct(null);
+      } else {
+        alert("上傳失敗，請檢查輸入內容");
       }
     } catch (error) {
       console.error("表單提交過程中發生錯誤:", error);
