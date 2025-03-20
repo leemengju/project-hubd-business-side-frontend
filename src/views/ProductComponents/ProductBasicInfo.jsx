@@ -5,11 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import ProductImageUpload from "./ProductImageUpload";
 import { validators } from "tailwind-merge";
-import { useEffect, useState } from "react";
 
 const COLORS = [
   { name: "黑色", value: "Black", className: "bg-black" },
-  { name: "灰色", value: "Grey", className: "bg-gray-400" },
+  { name: "灰色", value: "Gray", className: "bg-gray-400" },
   { name: "白色", value: "White", className: "bg-white border border-gray-300" },
 ];
 
@@ -19,7 +18,6 @@ const SIZES = [
   { name: "S", value: "S" }];
 
 const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProductImages }) => {
-
 
   // 新增規格
   const addSpecification = () => {
@@ -49,9 +47,6 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
       ),
     });
   };
-
-  // 判斷是否為飾品類別
-  const isAccessory = productInfo.category === "飾品";
 
   return (
     <div className="space-y-6 px-1">
@@ -107,8 +102,8 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
                 </>
               ) : (
                 <>
-                  <SelectItem value="isekai2000">異世界2000</SelectItem>
-                  <SelectItem value="crystal">水晶晶系列</SelectItem>
+                  <SelectItem value="異世界2000">異世界2000</SelectItem>
+                  <SelectItem value="水晶晶系列">水晶晶系列</SelectItem>
                 </>
               )}
             </SelectContent>
@@ -162,44 +157,39 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
             )}
           </div>
 
-          {/* 服飾類別才顯示顏色和尺寸選擇 */}
-          {!isAccessory && (
-            <>
-              {/* 顏色選擇 */}
-              <div className="flex items-center">
-                <p className="text-sm font-medium">顏色</p>
-                <div className="flex gap-2 ml-2">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${color.className} ${spec.color === color.value ? "ring-2 ring-red-500" : ""
-                        }`}
-                      value={color.value}
-                      onClick={() => updateSpecification(spec.id, "color", color.value)}
-                    ></button>
-                  ))}
-                </div>
-              </div>
+          {/* 顏色選擇 */}
+          <div className="flex items-center">
+            <p className="text-sm font-medium">顏色</p>
+            <div className="flex gap-2 ml-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${color.className} ${spec.color === color.value ? "ring-2 ring-red-500" : ""
+                    }`}
+                  value={color.value}
+                  onClick={() => updateSpecification(spec.id, "color", color.value)}
+                ></button>
+              ))}
+            </div>
+          </div>
 
-              {/* 尺寸選擇 */}
-              <div className="flex items-center">
-                <p className="text-sm font-medium">尺寸</p>
-                <div className="flex gap-2 ml-2">
-                  {SIZES.map((size) => (
-                    <button
-                      key={size.value}
-                      className={`w-10 h-10 px-py border rounded-md ${spec.size === size.value ? "border-red-500 text-red-500" : "border-gray-300"}`}
-                      value={size.value}
-                      onClick={() => updateSpecification(spec.id, "size", size.value)}  // 只傳遞 value
-                    >
-                      {size.name} 
-                  
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+          {/* 尺寸選擇 */}
+          <div className="flex items-center">
+            <p className="text-sm font-medium">尺寸</p>
+            <div className="flex gap-2 ml-2">
+              {SIZES.map((size) => (
+                <button
+                  key={size.value}
+                  className={`w-10 h-10 px-py border rounded-md ${spec.size === size.value ? "border-red-500 text-red-500" : "border-gray-300"}`}
+                  value={size.value}
+                  onClick={() => updateSpecification(spec.id, "size", size.value)}  // 只傳遞 value
+                >
+                  {size.name} 
+              
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* 庫存輸入框 */}
           <div>
@@ -214,8 +204,6 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
           </div>
         </div>
       ))}
-
-
       <ProductImageUpload
         title="商品圖片 *"
         description="請上傳 1 到 4 張圖片，第一張為封面照（建議尺寸 600×720 像素）"

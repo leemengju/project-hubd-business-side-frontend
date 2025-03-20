@@ -1,237 +1,138 @@
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useState, useRef } from "react";
-import PropTypes from "prop-types";
+import { Input } from "@/components/ui/input";
+import {
+    DndContext,
+    closestCenter,
+    useSensor,
+    useSensors,
+    PointerSensor,
+    KeyboardSensor,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    arrayMove,
+    useSortable,
+    horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const ProductImageUpload = ({ title, description, images, setImages }) => {
     const fileInputRef = useRef(null);
-    const [draggedIndex, setDraggedIndex] = useState(null);
 
-    const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
+    // 手動點擊 input 來打開選擇檔案視窗
+    const triggerFileSelect = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
 
-        // 計算還可以上傳的數量
-        const remainingSlots = 4 - images.length;
-        const filesToAdd = files.slice(0, remainingSlots);
+    // 上傳圖片
+    const handleUpload = (event) => {
+        const files = Array.from(event.target.files);
+        if (images.length + files.length > 4) {
+            alert("最多只能上傳 4 張圖片");
+            return;
+        }
 
-        const newImages = filesToAdd.map((file) => ({
+        const newImages = files.map((file) => ({
+            id: Date.now() + Math.random(), // 唯一 ID
             url: URL.createObjectURL(file),
-            file: file,
-            isNew: true // 標記為新上傳的圖片
+            file,
         }));
 
         setImages([...images, ...newImages]);
     };
 
-    const handleImageDelete = (index) => {
-        const newImages = [...images];
-        // 如果要刪除的圖片有 URL，需要釋放資源
-        if (newImages[index].url.startsWith("blob:")) {
-            URL.revokeObjectURL(newImages[index].url);
-        }
-        newImages.splice(index, 1);
-        setImages(newImages);
+    // 刪除圖片
+    const removeImage = (id) => {
+        setImages((prevImages) => prevImages.filter((image) => image.id !== id));
     };
 
-    // 開始拖曳
-    const handleDragStart = (index) => {
-        setDraggedIndex(index);
-    };
+    // 拖曳排序
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor)
+    );
 
-    // 拖曳進入其他元素區域時
-    const handleDragOver = (e, index) => {
-        e.preventDefault();
-        if (draggedIndex === null || draggedIndex === index) return;
-        
-        const element = e.currentTarget;
-        element.classList.add('bg-gray-100');
-    };
-
-    // 拖曳離開元素區域時
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        e.currentTarget.classList.remove('bg-gray-100');
-    };
-
-    // 拖曳結束時，重置狀態
-    const handleDragEnd = () => {
-        setDraggedIndex(null);
-        document.querySelectorAll('.dragging-over').forEach(el => {
-            el.classList.remove('bg-gray-100');
-        });
-    };
-
-    // 拖曳放置時進行排序
-    const handleDrop = (e, dropIndex) => {
-        e.preventDefault();
-        e.currentTarget.classList.remove('bg-gray-100');
-        
-        if (draggedIndex === null || draggedIndex === dropIndex) return;
-        
-        const newImages = [...images];
-        const draggedImage = newImages[draggedIndex];
-        
-        // 從陣列中移除被拖曳的項目
-        newImages.splice(draggedIndex, 1);
-        
-        // 在目標位置插入被拖曳的項目
-        newImages.splice(dropIndex, 0, draggedImage);
-        
-        // 更新每個圖片的顯示順序
-        const reorderedImages = newImages.map((img, idx) => ({
-            ...img,
-            product_display_order: idx + 1
-        }));
-        
-        console.log('拖曳後的新順序:', reorderedImages.map(img => ({
-            id: img.id || '無ID',
-            順序: img.product_display_order,
-            url: img.url ? (img.url.length > 30 ? img.url.substring(0, 30) + '...' : img.url) : '無URL'
-        })));
-        
-        setImages(reorderedImages);
-        setDraggedIndex(null);
-        
-        // 是否需要發送請求到後端更新圖片順序
-        // updateImageOrderInBackend(reorderedImages);
-    };
-
-    const getImageSrc = (image) => {
-        if (image.file) {
-            return URL.createObjectURL(image.file);
-        } else if (image.url) {
-            return image.url;
-        } else if (image.product_img_URL) {
-            return `http://localhost:8000/storage/${image.product_img_URL}`;
-        } else {
-            return '';
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            const oldIndex = images.findIndex((img) => img.id === active.id);
+            const newIndex = images.findIndex((img) => img.id === over.id);
+            setImages(arrayMove(images, oldIndex, newIndex));
         }
     };
 
     return (
         <div className="space-y-4">
-            <div>
-                <h3 className="text-lg font-semibold">{title}</h3>
-                <p className="text-sm text-gray-500">{description}</p>
+            {/* 虛線區隔 */}
+            <div className="border-t border-dashed border-gray-300 pt-6"></div>
+
+            {/* 標題與上傳按鈕 */}
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-2xl font-bold">{title}</h2>
+                    <p className="text-sm text-gray-500">{description}</p>
+                </div>
+                <Button variant="outline" className="mr-3" onClick={triggerFileSelect}>上傳照片</Button>
+                <Input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    multiple
+                    onChange={handleUpload}
+                />
             </div>
 
-            {/* 圖片上傳區 */}
-            <div className="grid grid-cols-2 gap-4">
-                {Array.from({ length: 4 }).map((_, index) => {
-                    const image = images[index];
-                    return (
-                        <div
-                            key={index}
-                            className={`border-2 border-dashed rounded-lg p-2 h-40 relative ${
-                                image ? "border-gray-300" : "border-gray-200"
-                            } ${draggedIndex === index ? "opacity-50" : ""}`}
-                            draggable={!!image}
-                            onDragStart={() => handleDragStart(index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDragLeave={handleDragLeave}
-                            onDragEnd={handleDragEnd}
-                            onDrop={(e) => handleDrop(e, index)}
-                        >
-                            {image ? (
-                                <>
-                                    <img
-                                        src={getImageSrc(image)}
-                                        alt={`Product image ${index + 1}`}
-                                        className="w-full h-full object-contain"
-                                        onError={(e) => {
-                                            console.error(`圖片載入失敗: ${e.target.src}`);
-                                            console.log("完整圖片物件:", JSON.stringify(image, null, 2));
-                                            e.target.src = 'https://placehold.co/600x400?text=圖片載入失敗';
-                                        }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleImageDelete(index)}
-                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                                    >
-                                        &times;
-                                    </button>
-                                    {index === 0 && (
-                                        <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-br">
-                                            封面
-                                        </div>
-                                    )}
-                                    <div className="absolute bottom-2 right-2 bg-gray-500 bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                                        <svg 
-                                            xmlns="http://www.w3.org/2000/svg" 
-                                            width="16" 
-                                            height="16" 
-                                            viewBox="0 0 24 24" 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            strokeWidth="2" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round"
-                                        >
-                                            <path d="M5 9h14M5 15h14"/>
-                                        </svg>
-                                    </div>
-                                </>
-                            ) : (
-                                <div
-                                    className="w-full h-full flex flex-col items-center justify-center cursor-pointer"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="text-gray-400"
-                                    >
-                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                        <circle cx="9" cy="9" r="2" />
-                                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                    </svg>
-                                    <span className="text-sm text-gray-500 mt-2">點擊上傳</span>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                multiple
-                accept="image/*"
-                className="hidden"
-            />
-
-            <div className="mt-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={images.length >= 4}
+            {/* 圖片區塊（可拖曳排序） */}
+            {images.length > 0 && (
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
                 >
-                    上傳圖片
-                </Button>
-                <p className="text-sm text-gray-500 mt-1">
-                    已上傳 {images.length}/4 張圖片
-                </p>
-            </div>
+                    <SortableContext items={images} strategy={horizontalListSortingStrategy}>
+                        <div className="flex gap-2">
+                            {images.map((image, index) => (
+                                <SortableImage key={image.id} image={image} index={index} removeImage={removeImage} />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+            )}
         </div>
     );
 };
 
-ProductImageUpload.propTypes = {
-    title: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
-    images: PropTypes.array.isRequired,
-    setImages: PropTypes.func.isRequired
+const SortableImage = ({ image, index, removeImage }) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div className="flex flex-col items-end">
+            <button
+                onClick={() => removeImage(image.id)}
+                className="w-6 h-6 bg-white rounded-full shadow text-red-500"
+            >
+                ✕
+            </button>
+            <div
+                ref={setNodeRef}
+                style={style}
+                {...attributes}
+                {...listeners}
+                className="relative w-[110px] h-[110px] bg-gray-100 border rounded-md overflow-hidden cursor-grab"
+            >
+                <img src={image.url} alt={`uploaded-${index}`} className="w-full h-full object-cover" />
+            </div>
+        </div>
+    );
 };
 
 export default ProductImageUpload;

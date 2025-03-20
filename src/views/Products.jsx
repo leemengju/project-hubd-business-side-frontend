@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,21 +21,28 @@ import AddProductDialog from "./ProductComponents/AddProductDialog";
 import banner1 from "../assets/images/store/banner1.JPG";
 import banner2 from "../assets/images/store/banner2.JPG";
 import banner3 from "../assets/images/store/banner3.JPG";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 
 const Products = () => {
-  const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [filters, setFilters] = useState({
-    status: [],
-    category: [],
-    search: ""
-  });
   const [editProduct, setEditProduct] = useState(null); // 追蹤當前要編輯的商品
+
+  const [products] = useState([
+    {
+      id: "RDD0001",
+      image: "https://via.placeholder.com/50",
+      name: "潮流東大門神社紀念版大學長外套",
+      price: 2000,
+      stock: 120,
+      status: "active",
+      specifications: [],
+      category: "clothing",
+      subcategory: "jacket",
+      description: "限量發售，經典復刻。",
+      material: "棉質",
+      specification: "L / XL",
+      shipping: "7天內發貨",
+      additional: "手洗建議",
+    },
+  ]);
 
   // 賣場輪播圖部分
   const [blocks, setBlocks] = useState([
@@ -152,35 +159,6 @@ const Products = () => {
       );
     }
   };
-
-  // 獲取商品列表
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('http://localhost:8000/api/products');
-      const data = await response.json();
-      console.log("獲取到的商品數據:", data);
-      setProducts(data);
-      setFilteredProducts(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setLoading(false);
-    }
-  };
-  
-  // 提供全局刷新方法，並初始加載數據
-  useEffect(() => {
-    window.refreshProductList = fetchProducts;
-    
-    // 初始加載數據
-    fetchProducts();
-    
-    // 組件卸載時清除全局函數
-    return () => {
-      window.refreshProductList = undefined;
-    };
-  }, []);
 
   return (
     <div className="p-6">

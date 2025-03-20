@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,163 +24,25 @@ import banner3 from "../assets/images/store/banner3.JPG";
 
 const Products = () => {
   const [editProduct, setEditProduct] = useState(null); // 追蹤當前要編輯的商品
-  const [products, setProducts] = useState([]); // ✅ 用於存儲 API 回傳的商品列表
-  const [filteredProducts, setFilteredProducts] = useState([]); // 篩選後的商品列表
-  const [loading, setLoading] = useState(true); // 控制載入狀態
-  const [error, setError] = useState(null); // 錯誤訊息
-  const [currentPage, setCurrentPage] = useState(1); // 當前頁數
-  const [itemsPerPage, setItemsPerPage] = useState(10); // 每頁顯示數量
-  const [searchTerm, setSearchTerm] = useState(""); // 搜尋關鍵字
-  const [selectedCategory, setSelectedCategory] = useState("all"); // 選擇的分類
-  const [categories, setCategories] = useState([]); // 分類列表
 
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/api/products", {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-        },
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("無法獲取商品資料");
-      }
-
-      let data = await response.json();
-
-      // ✅ 計算每個商品的總庫存數量
-      data = data.map(product => {
-        const totalStock = product.specifications
-          ? product.specifications.reduce((sum, spec) => sum + (parseInt(spec.product_stock) || 0), 0)
-          : 0;
-          console.log(product)
-        return {
-          ...product,
-          product_stock: totalStock, // ✅ 加總庫存
-          product_img: product.product_img
-            ? `http://localhost:8000/storage/${product.product_img}`
-            : "https://via.placeholder.com/150",
-
-          product_img_url: product.product_img_url
-            ? `http://localhost:8000/storage/${product.product_img_url}`
-            : "https://via.placeholder.com/150"
-        };
-        
-      });
-
-      console.log("獲取的商品列表:", data);
-      
-      setProducts(data);
-      setFilteredProducts(data);
-
-      // 提取所有分類，用於分類選擇器
-      const uniqueCategories = [];
-      data.forEach(product => {
-        if (product.classifiction && product.classifiction.length > 0) {
-          const categoryName = product.classifiction[0].parent_category;
-          if (categoryName && !uniqueCategories.includes(categoryName)) {
-            uniqueCategories.push(categoryName);
-          }
-        }
-      });
-      setCategories(uniqueCategories);
-    } catch (error) {
-      console.error("獲取商品失敗:", error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 📌 在頁面載入時獲取商品資料
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // 當搜尋條件或分類條件改變時，重新篩選商品
-  useEffect(() => {
-    filterProducts();
-  }, [searchTerm, selectedCategory, products]);
-
-  // 篩選產品的邏輯
-  const filterProducts = () => {
-    let results = [...products];
-
-    // 依分類篩選
-    if (selectedCategory !== "all") {
-      results = results.filter(product => {
-        return product.classifiction && 
-               product.classifiction.some(c => c.parent_category === selectedCategory);
-      });
-    }
-
-    // 依關鍵字搜尋
-    if (searchTerm.trim() !== "") {
-      const keyword = searchTerm.toLowerCase().trim();
-      results = results.filter(product => {
-        return (
-          (product.product_name && product.product_name.toLowerCase().includes(keyword)) ||
-          (product.product_id && product.product_id.toLowerCase().includes(keyword)) ||
-          (product.product_description && product.product_description.toLowerCase().includes(keyword))
-        );
-      });
-    }
-
-    setFilteredProducts(results);
-    setCurrentPage(1); // 重置到第一頁
-  };
-
-  // 處理搜尋按鈕點擊
-  const handleSearch = () => {
-    filterProducts();
-  };
-
-  // 處理按下 Enter 鍵
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      filterProducts();
-    }
-  };
-
-  // 處理分類選擇變更
-  const handleCategoryChange = (value) => {
-    setSelectedCategory(value);
-  };
-
-  // 計算分頁資料
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
-  // 切換頁數
-  const paginate = (pageNumber) => {
-    if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
-  // 處理每頁顯示數量變更
-  const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // 重置到第一頁
-  };
-
-  //編輯商品部分
-  const handleEditProduct = (product) => {
-    console.log("編輯商品:", product);
-    // 確保所有必要欄位存在
-    if (!product.product_name || !product.product_price || !product.product_status) {
-      console.error("商品資料不完整:", {
-        name: product.product_name ? "有值" : "無值",
-        price: product.product_price ? "有值" : "無值",
-        status: product.product_status ? "有值" : "無值"
-      });
-    }
-    setEditProduct(product); // 設定當前編輯的商品
-  };
+  const [products] = useState([
+    {
+      id: "RDD0001",
+      image: "https://via.placeholder.com/50",
+      name: "潮流東大門神社紀念版大學長外套",
+      price: 2000,
+      stock: 120,
+      status: "active",
+      specifications: [],
+      category: "clothing",
+      subcategory: "jacket",
+      description: "限量發售，經典復刻。",
+      material: "棉質",
+      specification: "L / XL",
+      shipping: "7天內發貨",
+      additional: "手洗建議",
+    },
+  ]);
 
   // 賣場輪播圖部分
   const [blocks, setBlocks] = useState([
@@ -233,8 +95,8 @@ const Products = () => {
           value.trim() === ""
             ? "請輸入標題"
             : value.length > 15
-              ? "最多15字元"
-              : "",
+            ? "最多15字元"
+            : "",
       };
     } else if (field === "description") {
       newErrors[id] = {
@@ -243,8 +105,8 @@ const Products = () => {
           value.trim() === ""
             ? "請輸入說明"
             : value.length > 30
-              ? "最多30字元"
-              : "",
+            ? "最多30字元"
+            : "",
       };
     } else if (field === "link") {
       newErrors[id] = {
@@ -308,10 +170,6 @@ const Products = () => {
           <span className="ml-2 text-brandBlue-darker  text-[20px] font-['Lexend']">商品＆賣場管理</span>
         </div>
       </div>
-      {/* 加載狀態 */}
-      {loading && <p>載入中...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-
       {/* Tabs 切換選單 */}
       <Tabs defaultValue="products">
         <div className="flex justify-between items-center">
@@ -320,157 +178,96 @@ const Products = () => {
             <TabsTrigger value="carousel">賣場輪播圖</TabsTrigger>
           </TabsList>
           <TabsContent value="products">
-            {/* 新增商品按鈕 & Drawer */}
-            <AddProductDialog editProduct={editProduct} setEditProduct={setEditProduct} onProductAdded={fetchProducts} />
+          {/* 新增商品按鈕 & Drawer */}
+          <AddProductDialog editProduct={editProduct} setEditProduct={setEditProduct} />
           </TabsContent>
         </div>
         <TabsContent value="products">
+          
           {/* 篩選與搜尋區塊 */}
           <div className="flex gap-2 mb-4">
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <Select>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="選擇分類" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
+                <SelectItem value="clothing">服飾</SelectItem>
+                <SelectItem value="accessories">配件</SelectItem>
               </SelectContent>
             </Select>
 
-            <Input 
-              placeholder="搜尋商品名稱、編號或描述..." 
-              className="flex-grow" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-            <Button 
-              className="bg-[#626981] text-white" 
-              onClick={handleSearch}
-            >
-              搜尋
-            </Button>
+            <Select>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="價格區間" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">0 - 1000</SelectItem>
+                <SelectItem value="mid">1000 - 5000</SelectItem>
+                <SelectItem value="high">5000+</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Input placeholder="搜尋商品..." className="flex-grow" />
+            <Button className="bg-brandBlue-normal text-white">搜尋</Button>
           </div>
 
-          {/* 顯示篩選結果 */}
-          <div className="text-sm text-gray-500 mb-2">
-            {filteredProducts.length > 0 
-              ? `找到 ${filteredProducts.length} 個符合條件的商品` 
-              : "沒有符合條件的商品"}
-          </div>
-
-          {/* ✅ 整合商品 API，顯示商品列表 */}
+          {/* 商品列表 Table */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader className="bg-gray-200">
                 <TableRow>
-                  <TableHead className="w-[15%]">產品編號</TableHead>
-                  <TableHead className="w-[10%]">產品圖片</TableHead>
-                  <TableHead className="w-[30%]">商品名稱</TableHead>
-                  <TableHead className="w-[10%]">價格</TableHead>
-                  <TableHead className="w-[10%]">庫存</TableHead>
-                  <TableHead className="w-[15%]">狀態</TableHead>
-                  <TableHead className="w-[10%]">操作</TableHead>
+                  <TableHead>產品編號</TableHead>
+                  <TableHead>產品圖片</TableHead>
+                  <TableHead>商品名稱</TableHead>
+                  <TableHead>價格</TableHead>
+                  <TableHead>庫存</TableHead>
+                  <TableHead>狀態</TableHead>
+                  <TableHead>操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentItems.length > 0 ? (
-                  currentItems.map((product) => (
-                    <TableRow key={product.product_id}>
-                      <TableCell className="w-[15%]">{product.product_id}</TableCell>
-                      <TableCell className="w-[10%]">
-                        <img
-                          src={product.product_img || product.product_img_url || "https://via.placeholder.com/150"}
-                          alt={product.product_name}
-                          className="w-10 h-10"
-                        />
-                      </TableCell>
-                      <TableCell className="w-[30%] truncate" title={product.product_name}>{product.product_name}</TableCell>
-                      <TableCell className="w-[10%]">${product.product_price}</TableCell>
-                      <TableCell className="w-[10%]">{product.product_stock || "N/A"}</TableCell>
-                      <TableCell className="w-[15%]">
-                        <Select defaultValue={product.product_status}>
-                          <SelectTrigger className="w-28">
-                            <SelectValue placeholder="選擇狀態" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">上架中</SelectItem>
-                            <SelectItem value="inactive">下架中</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="w-[10%]">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z" />
-                          </svg>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan="7" className="text-center p-4">
-                      尚無商品
+                {products.map((product, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{product.id}</TableCell>
+                    <TableCell>
+                      <img src={product.image} alt="商品" className="w-10 h-10" />
+                    </TableCell>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{product.price}</TableCell>
+                    <TableCell>{product.stock}</TableCell>
+                    <TableCell>
+                      <Select defaultValue={product.status}>
+                        <SelectTrigger className="w-28">
+                          <SelectValue placeholder="選擇狀態" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">上架中</SelectItem>
+                          <SelectItem value="unactive">下架中</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="flex gap-2">
+                      {/* 點擊編輯時，設置當前選中的商品到 editProduct */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          console.log("Editing product:", product); // 確認商品數據是否正確
+                          setEditProduct(product);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z" /></svg>
+                      </Button>
+
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
-            
-            {/* 分頁控制區塊 */}
-            {filteredProducts.length > 0 && (
-              <div className="flex justify-between items-center p-4 bg-slate-50 border-t">
-                <div className="flex items-center">
-                  <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="每頁顯示" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">顯示 5 筆</SelectItem>
-                      <SelectItem value="10">顯示 10 筆</SelectItem>
-                      <SelectItem value="20">顯示 20 筆</SelectItem>
-                      <SelectItem value="50">顯示 50 筆</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                      <path d="M15.09 18.4L16.5 17L11.92 12.4L16.5 7.8L15.09 6.4L9.09 12.4L15.09 18.4Z" fill="currentColor" />
-                    </svg>
-                  </Button>
-                  
-                  <span className="text-sm">
-                    {currentPage} / {totalPages > 0 ? totalPages : 1}
-                  </span>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                      <path d="M10.41 6.4L9 7.8L13.58 12.4L9 17L10.41 18.4L16.41 12.4L10.41 6.4Z" fill="currentColor" />
-                    </svg>
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
+
+
         </TabsContent>
         <TabsContent value="carousel">
           <div className="flex justify-start items-center h-full gap-10">
