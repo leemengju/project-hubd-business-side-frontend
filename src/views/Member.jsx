@@ -10,19 +10,37 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { CSVLink } from "react-csv";
+
+const headers = [
+  { label: "會員編號", key: "id" },
+  { label: "姓名", key: "name" },
+  { label: "Email", key: "email" },
+  { label: "手機", key: "phone" },
+  { label: "生日", key: "birthday" },
+  { label: "建立時間", key: "created_at" },
+];
 
 const Member = () => {
   const [members, setMembers] = useState([]); // 存放會員資料
   const [selectedMember, setSelectedMember] = useState(null); // 用來存放點擊的會員資料
   const [showModal, setShowModal] = useState(false); // 控制 Modal 開關
   const [orderData, setOrderData] = useState({ totalOrders: 0, totalSpent: 0 }); //訂單數＆消費總金額
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const membersPerPage = 30; //每頁最多30筆
 
   useEffect(() => {
-    axios
-      .get("http://127.0.0.1:8000/api/users/") // 這裡換成你的 API 路徑
-      .then((response) => setMembers(response.data)) // 把資料存入 members
-      .catch((error) => console.error("Error fetching members:", error));
-  }, []);
+    
+    axios 
+      .get(`http://127.0.0.1:8000/api/users?page=${currentPage}`) // 這裡換成你的 API 路徑  前端使用 Lazy Loading
+      .then((response) => {
+        console.log("✅ API 資料：", response.data);
+        setMembers(Array.isArray(response.data) ? response.data : []); // 把資料存入 members
+        setTotalPages(response.data.last_page || 1);
+      })
+        .catch((error) => console.error("Error fetching members:", error));
+  }, [currentPage]);// 只有當 currentPage 改變時，才重新載入資料
 
   // 點擊檢視按鈕時，設定選中的會員並顯示 Modal
   const handleViewMember = (member) => {
@@ -51,14 +69,71 @@ const Member = () => {
     setOrderData({ totalOrders: 0, totalSpent: 0 }); // 清空訂單資訊
   };
 
+  //計算當前頁應該顯示的資料
+  // const totalPages = Math.ceil(members.length / membersPerPage);
+  const indexOfLastMember = currentPage * membersPerPage;
+  const indexOfFirstMember = indexOfLastMember - membersPerPage;
+  const currentMembers = members;
+  console.log("畫面上 members 狀態：", members);
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">會員資料列表</h1>
-      <Button variant="outline" className="mb-4">
-        匯出
-      </Button>
+      <div className="flex justify-between mb-5">
+        <div className="box-border  flex relative flex-row shrink-0 gap-2 my-auto">
+          <div className="my-auto ">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="1.5em"
+              height="1.5em"
+              viewBox="0 0 512 512"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="30"
+                d="M402 168c-2.93 40.67-33.1 72-66 72s-63.12-31.32-66-72c-3-42.31 26.37-72 66-72s69 30.46 66 72"
+              />
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeMiterlimit="10"
+                strokeWidth="30"
+                d="M336 304c-65.17 0-127.84 32.37-143.54 95.41c-2.08 8.34 3.15 16.59 11.72 16.59h263.65c8.57 0 13.77-8.25 11.72-16.59C463.85 335.36 401.18 304 336 304Z"
+              />
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="30"
+                d="M200 185.94c-2.34 32.48-26.72 58.06-53 58.06s-50.7-25.57-53-58.06C91.61 152.15 115.34 128 147 128s55.39 24.77 53 57.94"
+              />
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeMiterlimit="10"
+                strokeWidth="30"
+                d="M206 306c-18.05-8.27-37.93-11.45-59-11.45c-52 0-102.1 25.85-114.65 76.2c-1.65 6.66 2.53 13.25 9.37 13.25H154"
+              />
+            </svg>
+          </div>
+          <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
+            會員資料列表
+          </h1>
+        </div>
+        <CSVLink data={members} headers={headers} filename={"會員資料.csv"}>
+          <Button
+            variant="outline"
+            className="  bg-brandBlue-normal text-white"
+          >
+            匯出
+          </Button>
+        </CSVLink>
+      </div>
 
-      <Table className="w-full border">
+      <Table className="w-full border rounded-lg overflow-hidden">
         <TableCaption>會員資訊列表</TableCaption>
         <TableHeader>
           <TableRow className="bg-gray-200">
@@ -74,8 +149,8 @@ const Member = () => {
 
         <TableBody>
           {/* 動態生成會員內容 */}
-          {members.length > 0 ? (
-            members.map((member) => (
+          {currentMembers.length > 0 ? (
+            currentMembers.map((member) => (
               <TableRow key={member.id} className="border-b hover:bg-gray-100">
                 <TableCell className="text-center font-medium">
                   {member.id}
@@ -91,7 +166,7 @@ const Member = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mr-2"
+                    className="mr-2 bg-brandBlue-normal text-white"
                     onClick={() => handleViewMember(member)} // 點擊檢視按鈕
                   >
                     檢視
@@ -109,6 +184,27 @@ const Member = () => {
         </TableBody>
       </Table>
 
+      <div className="flex justify-center mt-4">
+        <Button
+          variant="outline"
+          onClick={() => setCurrentPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="mr-2 bg-brandBlue-normal text-white"
+        >
+          上一頁
+        </Button>
+        <span className="px-4 py-2 border rounded-lg">
+          {currentPage} / {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          onClick={() => setCurrentPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="ml-2 bg-brandBlue-normal text-white"
+        >
+          下一頁
+        </Button>
+      </div>
       {/* 會員詳細資料 Modal */}
       {showModal && selectedMember && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -117,7 +213,7 @@ const Member = () => {
             <h2 className="text-xl font-bold mb-6 text-center">會員詳細資料</h2>
             <hr />
             <p className="grid grid-cols-2">
-              <strong>會員編號:</strong> <span>#{selectedMember.id}</span>
+              <strong>會員編號:</strong> <span>{selectedMember.id}</span>
             </p>
             <hr />
             <p className="grid grid-cols-2">
@@ -138,7 +234,9 @@ const Member = () => {
             <hr />
             <p className="grid grid-cols-2">
               <strong>建立時間:</strong>
-              <span>{new Date(selectedMember.created_at).toLocaleDateString()}</span>
+              <span>
+                {new Date(selectedMember.created_at).toLocaleDateString()}
+              </span>
             </p>
             <hr />
             <p className="grid grid-cols-2">
@@ -147,11 +245,16 @@ const Member = () => {
             </p>
             <hr />
             <p className="grid grid-cols-2">
-              <strong>消費總金額:</strong><span>${orderData.totalSpent.toFixed(2)}</span>
+              <strong>消費總金額:</strong>
+              <span>${orderData.totalSpent.toFixed(2)}</span>
             </p>
             <hr />
             <div className="mt-auto flex justify-center">
-              <Button variant="outline" onClick={handleCloseModal}>
+              <Button
+                variant="outline"
+                onClick={handleCloseModal}
+                className="bg-brandBlue-normal text-white"
+              >
                 關閉
               </Button>
             </div>
