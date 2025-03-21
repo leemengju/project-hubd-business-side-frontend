@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const ProductImageUpload = ({ title, description, images, setImages }) => {
+const ProductImageUpload = ({ title, description, images, setImages, isEditMode = false }) => {
     const fileInputRef = useRef(null);
 
     // 手動點擊 input 來打開選擇檔案視窗
@@ -46,6 +46,7 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
 
     // 刪除圖片
     const removeImage = (id) => {
+        if (isEditMode) return; // 編輯模式下不允許刪除
         setImages((prevImages) => prevImages.filter((image) => image.id !== id));
     };
 
@@ -56,6 +57,8 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
     );
 
     const handleDragEnd = (event) => {
+        if (isEditMode) return; // 編輯模式下不允許排序
+        
         const { active, over } = event;
         if (active.id !== over.id) {
             const oldIndex = images.findIndex((img) => img.id === active.id);
@@ -73,9 +76,13 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-2xl font-bold">{title}</h2>
-                    <p className="text-sm text-gray-500">{description}</p>
+                    <p className="text-sm text-gray-500">
+                        {isEditMode ? "編輯模式下不可更改圖片" : description}
+                    </p>
                 </div>
-                <Button variant="outline" className="mr-3" onClick={triggerFileSelect}>上傳照片</Button>
+                {!isEditMode && (
+                    <Button variant="outline" className="mr-3" onClick={triggerFileSelect}>上傳照片</Button>
+                )}
                 <Input
                     type="file"
                     ref={fileInputRef}
@@ -83,6 +90,7 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
                     accept="image/*"
                     multiple
                     onChange={handleUpload}
+                    disabled={isEditMode}
                 />
             </div>
 
@@ -96,7 +104,13 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
                     <SortableContext items={images} strategy={horizontalListSortingStrategy}>
                         <div className="flex gap-2">
                             {images.map((image, index) => (
-                                <SortableImage key={image.id} image={image} index={index} removeImage={removeImage} />
+                                <SortableImage 
+                                    key={image.id} 
+                                    image={image} 
+                                    index={index} 
+                                    removeImage={removeImage} 
+                                    isEditMode={isEditMode}
+                                />
                             ))}
                         </div>
                     </SortableContext>
@@ -106,7 +120,7 @@ const ProductImageUpload = ({ title, description, images, setImages }) => {
     );
 };
 
-const SortableImage = ({ image, index, removeImage }) => {
+const SortableImage = ({ image, index, removeImage, isEditMode }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
 
     const style = {
@@ -116,20 +130,30 @@ const SortableImage = ({ image, index, removeImage }) => {
 
     return (
         <div className="flex flex-col items-end">
-            <button
-                onClick={() => removeImage(image.id)}
-                className="w-6 h-6 bg-white rounded-full shadow text-red-500"
-            >
-                ✕
-            </button>
+            {!isEditMode && (
+                <button
+                    onClick={() => removeImage(image.id)}
+                    className="w-6 h-6 bg-white rounded-full shadow text-red-500"
+                >
+                    ✕
+                </button>
+            )}
             <div
                 ref={setNodeRef}
                 style={style}
-                {...attributes}
-                {...listeners}
-                className="relative w-[110px] h-[110px] bg-gray-100 border rounded-md overflow-hidden cursor-grab"
+                {...(isEditMode ? {} : attributes)}
+                {...(isEditMode ? {} : listeners)}
+                className={`relative w-[110px] h-[110px] bg-gray-100 border rounded-md overflow-hidden ${isEditMode ? '' : 'cursor-grab'}`}
             >
-                <img src={image.url} alt={`uploaded-${index}`} className="w-full h-full object-cover" />
+                <img 
+                    src={image.url || image.preview} 
+                    alt={`uploaded-${index}`} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                        console.error("圖片載入失敗:", image.url || image.preview);
+                        e.target.src = "/placeholder-image.svg"; // 使用 SVG 替代圖片
+                    }}
+                />
             </div>
         </div>
     );

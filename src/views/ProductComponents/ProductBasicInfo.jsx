@@ -17,7 +17,7 @@ const SIZES = [
   { name: "M", value: "M" },
   { name: "S", value: "S" }];
 
-const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProductImages }) => {
+const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProductImages, formErrors = {}, isEditMode = false }) => {
 
   // 新增規格
   const addSpecification = () => {
@@ -40,6 +40,26 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
 
   // 更新規格內容
   const updateSpecification = (id, field, value) => {
+    // 檢查是否有重複的規格
+    if (field === 'color' || field === 'size') {
+      const currentSpec = productInfo.specifications.find(spec => spec.id === id);
+      const newSpec = { ...currentSpec, [field]: value };
+      
+      // 檢查其他規格是否有相同的顏色和尺寸組合
+      const isDuplicate = productInfo.specifications.some(spec => 
+        spec.id !== id && // 排除當前正在編輯的規格
+        spec.color === newSpec.color && 
+        spec.size === newSpec.size &&
+        spec.color !== '' && // 確保顏色不為空
+        spec.size !== '' // 確保尺寸不為空
+      );
+
+      if (isDuplicate) {
+        alert('已選擇重複的規格組合！');
+        return;
+      }
+    }
+
     setProductInfo({
       ...productInfo,
       specifications: productInfo.specifications.map((spec) =>
@@ -64,7 +84,11 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
           placeholder="輸入商品名稱，最多20字"
           value={productInfo.name}
           onChange={(e) => setProductInfo({ ...productInfo, name: e.target.value })}
+          className={formErrors.product_name ? "border-red-500" : ""}
         />
+        {formErrors.product_name && (
+          <p className="text-red-500 text-sm mt-1">{formErrors.product_name.join(', ')}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -73,7 +97,7 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
           value={productInfo.category}
           onValueChange={(value) => setProductInfo({ ...productInfo, category: value, subcategory: "" })}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className={`w-full ${formErrors.parent_category ? "border-red-500" : ""}`}>
             <SelectValue placeholder="選擇分類" />
           </SelectTrigger>
           <SelectContent>
@@ -81,6 +105,9 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
             <SelectItem value="飾品">飾品</SelectItem>
           </SelectContent>
         </Select>
+        {formErrors.parent_category && (
+          <p className="text-red-500 text-sm mt-1">{formErrors.parent_category.join(', ')}</p>
+        )}
       </div>
 
       {productInfo.category && (
@@ -90,7 +117,7 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
             value={productInfo.subcategory}
             onValueChange={(value) => setProductInfo({ ...productInfo, subcategory: value })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${formErrors.child_category ? "border-red-500" : ""}`}>
               <SelectValue placeholder="選擇子分類" />
             </SelectTrigger>
             <SelectContent>
@@ -108,6 +135,9 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
               )}
             </SelectContent>
           </Select>
+          {formErrors.child_category && (
+            <p className="text-red-500 text-sm mt-1">{formErrors.child_category.join(', ')}</p>
+          )}
         </div>
       )}
 
@@ -119,17 +149,24 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
           placeholder="輸入價格 (NT$)"
           value={productInfo.price}
           onChange={(e) => setProductInfo({ ...productInfo, price: e.target.value })}
+          className={formErrors.product_price ? "border-red-500" : ""}
         />
+        {formErrors.product_price && (
+          <p className="text-red-500 text-sm mt-1">{formErrors.product_price.join(', ')}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label>狀態 *</Label>
         <Tabs value={productInfo.status} onValueChange={(value) => setProductInfo({ ...productInfo, status: value })}>
-          <TabsList>
+          <TabsList className={formErrors.product_status ? "border border-red-500" : ""}>
             <TabsTrigger value="active">上架中</TabsTrigger>
             <TabsTrigger value="inactive">下架</TabsTrigger>
           </TabsList>
         </Tabs>
+        {formErrors.product_status && (
+          <p className="text-red-500 text-sm mt-1">{formErrors.product_status.join(', ')}</p>
+        )}
       </div>
 
       {/* 虛線區隔 */}
@@ -142,6 +179,16 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
           新增規格
         </Button>
       </div>
+      {/* 顯示規格相關錯誤訊息 */}
+      {formErrors.specifications && (
+        <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <ul className="list-disc ml-5">
+            {formErrors.specifications.map((error, index) => (
+              <li key={index} className="text-sm">{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {(productInfo?.specifications || []).map((spec, index) => (
         <div key={spec.id} className="border-b border-dashed pb-4 space-y-3">
           <div className="flex justify-between items-center">
@@ -157,39 +204,42 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
             )}
           </div>
 
-          {/* 顏色選擇 */}
-          <div className="flex items-center">
-            <p className="text-sm font-medium">顏色</p>
-            <div className="flex gap-2 ml-2">
-              {COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${color.className} ${spec.color === color.value ? "ring-2 ring-red-500" : ""
-                    }`}
-                  value={color.value}
-                  onClick={() => updateSpecification(spec.id, "color", color.value)}
-                ></button>
-              ))}
+          {/* 顏色選擇 - 只在服飾分類時顯示 */}
+          {productInfo.category === "服飾" && (
+            <div className="flex items-center">
+              <p className="text-sm font-medium">顏色</p>
+              <div className="flex gap-2 ml-2">
+                {COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${color.className} ${spec.color === color.value ? "ring-2 ring-red-500" : ""
+                      }`}
+                    value={color.value}
+                    onClick={() => updateSpecification(spec.id, "color", color.value)}
+                  ></button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* 尺寸選擇 */}
-          <div className="flex items-center">
-            <p className="text-sm font-medium">尺寸</p>
-            <div className="flex gap-2 ml-2">
-              {SIZES.map((size) => (
-                <button
-                  key={size.value}
-                  className={`w-10 h-10 px-py border rounded-md ${spec.size === size.value ? "border-red-500 text-red-500" : "border-gray-300"}`}
-                  value={size.value}
-                  onClick={() => updateSpecification(spec.id, "size", size.value)}  // 只傳遞 value
-                >
-                  {size.name} 
-              
-                </button>
-              ))}
+          {/* 尺寸選擇 - 只在服飾分類時顯示 */}
+          {productInfo.category === "服飾" && (
+            <div className="flex items-center">
+              <p className="text-sm font-medium">尺寸</p>
+              <div className="flex gap-2 ml-2">
+                {SIZES.map((size) => (
+                  <button
+                    key={size.value}
+                    className={`w-10 h-10 px-py border rounded-md ${spec.size === size.value ? "border-red-500 text-red-500" : "border-gray-300"}`}
+                    value={size.value}
+                    onClick={() => updateSpecification(spec.id, "size", size.value)}
+                  >
+                    {size.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 庫存輸入框 */}
           <div>
@@ -209,6 +259,7 @@ const ProductBasicInfo = ({ productInfo, setProductInfo, productImages, setProdu
         description="請上傳 1 到 4 張圖片，第一張為封面照（建議尺寸 600×720 像素）"
         images={productImages}
         setImages={setProductImages}
+        isEditMode={isEditMode}
       />
     </div>
   );
