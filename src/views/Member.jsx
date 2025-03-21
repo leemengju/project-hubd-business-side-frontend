@@ -27,17 +27,19 @@ const Member = () => {
   const [showModal, setShowModal] = useState(false); // 控制 Modal 開關
   const [orderData, setOrderData] = useState({ totalOrders: 0, totalSpent: 0 }); //訂單數＆消費總金額
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1); // 新增這行
+  const [totalPages, setTotalPages] = useState(1);
   const membersPerPage = 30; //每頁最多30筆
 
   useEffect(() => {
+    
     axios 
       .get(`http://127.0.0.1:8000/api/users?page=${currentPage}`) // 這裡換成你的 API 路徑  前端使用 Lazy Loading
       .then((response) => {
-        setMembers(response.data.data); // 把資料存入 members
-        setTotalPages(response.data.last_page); // 更新總頁數
-      }) 
-      .catch((error) => console.error("Error fetching members:", error));
+        console.log("✅ API 資料：", response.data);
+        setMembers(Array.isArray(response.data) ? response.data : []); // 把資料存入 members
+        setTotalPages(response.data.last_page || 1);
+      })
+        .catch((error) => console.error("Error fetching members:", error));
   }, [currentPage]);// 只有當 currentPage 改變時，才重新載入資料
 
   // 點擊檢視按鈕時，設定選中的會員並顯示 Modal
@@ -67,11 +69,12 @@ const Member = () => {
     setOrderData({ totalOrders: 0, totalSpent: 0 }); // 清空訂單資訊
   };
 
- 
+  //計算當前頁應該顯示的資料
+  // const totalPages = Math.ceil(members.length / membersPerPage);
   const indexOfLastMember = currentPage * membersPerPage;
   const indexOfFirstMember = indexOfLastMember - membersPerPage;
-  const currentMembers = members.slice(indexOfFirstMember, indexOfLastMember);
-
+  const currentMembers = members;
+  console.log("畫面上 members 狀態：", members);
   return (
     <div className="p-6">
       <div className="flex justify-between mb-5">
