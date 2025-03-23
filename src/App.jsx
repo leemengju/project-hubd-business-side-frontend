@@ -25,6 +25,13 @@ function App() {
               background: '#F44336',
               color: '#fff',
             }
+          },
+          info: {
+            duration: 3000,
+            style: {
+              background: '#2196F3',
+              color: '#fff',
+            }
           }
         }}
       />

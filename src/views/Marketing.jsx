@@ -53,7 +53,9 @@ const Marketing = () => {
     categories: [],
     users: [],
     buy_quantity: "",
-    free_quantity: ""
+    free_quantity: "",
+    applicable_products: [],
+    applicable_categories: []
   });
 
   // 新增活動的表單資料
@@ -132,9 +134,16 @@ const Marketing = () => {
         // 確保 users 欄位為陣列
         couponData.users = Array.isArray(couponData.users) ? couponData.users : [];
         
+        // 確保適用商品和適用分類欄位為陣列
+        couponData.applicable_products = Array.isArray(couponData.applicable_products) ? couponData.applicable_products : [];
+        couponData.applicable_categories = Array.isArray(couponData.applicable_categories) ? couponData.applicable_categories : [];
+        
         // 確保日期格式正確
         if (couponData.start_date) couponData.start_date = new Date(couponData.start_date).toISOString().split('T')[0];
         if (couponData.end_date) couponData.end_date = new Date(couponData.end_date).toISOString().split('T')[0];
+        
+        // 調試日誌
+        console.log('提交優惠券數據:', couponData);
         
         if (modalMode === "add") {
           const response = await apiService.post("/coupons", couponData);
@@ -351,142 +360,111 @@ const Marketing = () => {
       items = Array.isArray(detailItem.applicable_categories) ? detailItem.applicable_categories : [];
     }
     
-    // 驗證數據類型
-    if (items.length > 0) {
-      console.log('首項類型檢查:', items[0]);
-      // 確認項目類型，避免錯誤的資料類型顯示
-      if (applicableType === "users" && items[0].email === undefined) {
-        console.warn('檢測到會員列表中的項目不是會員資料，重置為空陣列');
-        items = [];
-      } else if ((applicableType === "products" || applicableType === "applicable_products") && items[0].name === undefined) {
-        console.warn('檢測到商品列表中的項目不是商品資料，重置為空陣列');
-        items = [];
-      }
-    }
-    
-    // 除錯訊息
     console.log('適用範圍類型:', applicableType);
     console.log('項目數量:', items.length);
     console.log('項目數據:', items);
     
-    // 根據不同類型渲染不同的內容
-    const renderContent = () => {
-      // 商品列表
-      if (applicableType === "products" || applicableType === "applicable_products") {
-        // 依據主商品 ID 分組規格
-        const groupedProducts = {};
-        
-        items.forEach(item => {
-          // 如果有 product_main_id, 那麼這是規格
-          if (item.product_main_id) {
-            if (!groupedProducts[item.product_main_id]) {
-              groupedProducts[item.product_main_id] = {
-                mainProduct: null,
-                variants: []
-              };
-            }
-            groupedProducts[item.product_main_id].variants.push(item);
-          } 
-          // 否則，這是主商品或尚未分類的商品
-          else if (item.id) {
-            // 如果這個 ID 已經存在在分組中，那麼這是主商品
-            if (groupedProducts[item.id]) {
-              groupedProducts[item.id].mainProduct = item;
-            } else {
-              // 如果不存在，創建新的分組
-              groupedProducts[item.id] = {
-                mainProduct: item,
-                variants: []
-              };
-            }
-          }
-        });
-        
-        // 如果無法分組（舊數據可能沒有 product_main_id），則直接顯示原始列表
-        const isGroupable = Object.keys(groupedProducts).length > 0;
-        
-        if (!isGroupable) {
-          return (
-            <div className="max-h-[60vh] overflow-y-auto p-1">
-              {items.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  {items.map((item, index) => (
-                    <div key={item.id || `item-${index}`} className="flex items-center p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all bg-white overflow-hidden">
-                      {item.image ? (
-                        <div className="w-16 h-16 rounded-md overflow-hidden border border-gray-200 mr-3 flex-shrink-0">
-                          <img 
-                            src={item.image} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover" 
-                            onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 rounded-md overflow-hidden flex items-center justify-center bg-gray-100 mr-3 flex-shrink-0">
-                          <PackageIcon className="h-8 w-8 text-gray-400" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 truncate mb-1">{item.name || "未命名商品"}</h4>
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          {item.sku && (
-                            <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs whitespace-nowrap">
-                              SKU: {item.sku}
-                            </span>
-                          )}
-                          {item.stock !== undefined && (
-                            <span className="px-2 py-0.5 bg-blue-50 rounded-full text-blue-700 text-xs whitespace-nowrap">
-                              庫存: {item.stock}
-                            </span>
-                          )}
-                          {(item.color || item.size) && (
-                            <span className="px-2 py-0.5 bg-purple-50 rounded-full text-purple-700 text-xs whitespace-nowrap">
-                              {item.color && item.color !== 'null' ? item.color : ''}
-                              {item.color && item.size && item.color !== 'null' && item.size !== 'null' ? '/' : ''}
-                              {item.size && item.size !== 'null' ? item.size : ''}
-                            </span>
-                          )}
-                        </div>
-                        {item.price && (
-                          <div className="mt-1.5">
-                            <span className="font-medium text-sm text-brandBlue-dark">
-                              NT$ {item.price}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-gray-500">
-                  <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                  <p>無適用商品</p>
-                </div>
-              )}
-            </div>
-          );
+    // 依據主商品 ID 分組規格
+    const groupedProducts = {};
+    
+    // 檢查資料結構是否適合分組
+    const hasComplexStructure = items.some(item => 
+      item.product_main_id || 
+      item.spec_id ||
+      (item.variants && item.variants.length > 0) || 
+      (item.color && item.color !== 'null') || 
+      (item.size && item.size !== 'null')
+    );
+    
+    console.log('檢查分組資料:', items);
+    
+    // 按照product_id分組（商品編號，如"pa001"）
+    items.forEach(item => {
+      // 獲取product_id作為主鍵（商品編號）
+      const productId = item.product_id || ''; 
+      if (!productId) {
+        console.warn('找到沒有product_id的項目:', item);
+        return;
+      }
+      
+      console.log(`處理項目 - ID: ${item.id}, product_id: ${productId}, spec_id: ${item.spec_id}`);
+      
+      // 如果這是一個規格（有spec_id，規格流水號）
+      if (item.spec_id) {
+        if (!groupedProducts[productId]) {
+          groupedProducts[productId] = {
+            mainProduct: null,
+            variants: []
+          };
         }
         
-        // 分組顯示商品和規格
-        return (
-          <div className="max-h-[60vh] overflow-y-auto p-1">
-            {Object.keys(groupedProducts).length > 0 ? (
-              <div className="space-y-4">
-                {Object.values(groupedProducts).map((group, groupIndex) => {
-                  const mainProduct = group.mainProduct || (group.variants.length > 0 ? group.variants[0] : null);
-                  if (!mainProduct) return null;
-                  
-                  return (
-                    <div key={`group-${groupIndex}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                      {/* 主商品資訊 */}
-                      <div className="flex items-start p-4 border-b border-gray-100">
-                        {mainProduct.image ? (
+        // 將規格添加到對應商品的變體列表中
+        groupedProducts[productId].variants.push({
+          ...item,
+          // 確保有完整的資訊
+          product_id: productId,
+          spec_id: item.spec_id,
+          size: item.size,
+          color: item.color,
+          price: item.price || 0,
+          stock: item.stock || 0
+        });
+      } 
+      // 否則，這是主商品
+      else {
+        if (!groupedProducts[productId]) {
+          groupedProducts[productId] = {
+            mainProduct: item,
+            variants: []
+          };
+        } else {
+          // 只有當目前沒有主商品時才設置
+          if (!groupedProducts[productId].mainProduct) {
+            groupedProducts[productId].mainProduct = item;
+          }
+        }
+      }
+    });
+    
+    // 處理可能缺少主商品的情況
+    Object.keys(groupedProducts).forEach(productId => {
+      const group = groupedProducts[productId];
+      // 如果沒有主商品但有變體，使用第一個變體作為主商品
+      if (!group.mainProduct && group.variants.length > 0) {
+        group.mainProduct = {...group.variants[0]};
+        // 移除主商品的spec_id，避免它被視為變體
+        delete group.mainProduct.spec_id;
+      }
+    });
+    
+    // 檢查分組結果
+    console.log('分組結果:', groupedProducts);
+    const isGroupable = Object.keys(groupedProducts).length > 0;
+    console.log('是否可分組:', isGroupable);
+    
+    // 使用Dialog組件包裝模態窗口內容
+    return (
+      <Dialog open={showApplicableModal} onOpenChange={setShowApplicableModal}>
+        <DialogContent className="sm:max-w-[600px] transition-all duration-300 ease-out will-change-transform will-change-opacity">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{title}</DialogTitle>
+            </div>
+          </DialogHeader>
+          
+          {/* 如果無法分組，顯示原始列表 */}
+          {!isGroupable ? (
+            <div className="max-h-[60vh] overflow-y-auto p-1">
+              {items.length > 0 ? (
+                <div className="space-y-4">
+                  {items.map((item, index) => (
+                    <div key={item.id || `item-${index}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                      <div className="flex items-start p-4">
+                        {item.image ? (
                           <div className="w-20 h-20 rounded-md overflow-hidden border border-gray-200 mr-4 flex-shrink-0">
                             <img 
-                              src={mainProduct.image} 
-                              alt={mainProduct.name} 
+                              src={item.image} 
+                              alt={item.name} 
                               className="w-full h-full object-cover" 
                               onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
                               loading="lazy"
@@ -498,210 +476,153 @@ const Marketing = () => {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                            {mainProduct.name || "未命名商品"}
-                          </h3>
+                          <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.name || "未命名商品"}</h3>
                           <div className="flex flex-wrap items-center gap-2 text-sm mb-2">
-                            {mainProduct.product_id && (
+                            {item.product_id && (
                               <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs whitespace-nowrap">
-                                ID: {mainProduct.product_id || mainProduct.id}
+                                商品編號: {item.product_id}
                               </span>
                             )}
-                            {mainProduct.stock !== undefined && (
+                            {item.sku && (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs whitespace-nowrap">
+                                SKU: {item.sku}
+                              </span>
+                            )}
+                            {item.stock !== undefined && (
                               <span className="px-2 py-0.5 bg-blue-50 rounded-full text-blue-700 text-xs whitespace-nowrap">
-                                總庫存: {mainProduct.stock}
+                                庫存: {item.stock}
                               </span>
                             )}
-                            {mainProduct.category_name && (
-                              <span className="px-2 py-0.5 bg-green-50 rounded-full text-green-700 text-xs whitespace-nowrap">
-                                分類: {mainProduct.category_name}
+                            {(item.color || item.size) && (
+                              <span className="px-2 py-1 bg-brandBlue-ultraLight text-xs rounded-full border border-brandBlue-light text-brandBlue-dark">
+                                {item.color && item.color !== 'null' ? item.color : ''}
+                                {item.color && item.size && item.color !== 'null' && item.size !== 'null' ? ' / ' : ''}
+                                {item.size && item.size !== 'null' ? item.size : ''}
                               </span>
                             )}
                           </div>
-                          {mainProduct.price && (
+                          {item.price && (
                             <div className="mt-1">
                               <span className="font-medium text-brandBlue-dark">
-                                NT$ {mainProduct.price}
+                                NT$ {item.price}
                               </span>
                             </div>
                           )}
                         </div>
                       </div>
-                      
-                      {/* 規格列表 */}
-                      {group.variants.length > 0 && (
-                        <div className="p-3 bg-gray-50">
-                          <p className="text-sm font-medium text-gray-500 mb-2">已選擇的規格 ({group.variants.length})</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {group.variants.map((variant, vIndex) => (
-                              <div key={`variant-${vIndex}`} className="flex items-center p-2 bg-white rounded-md border border-gray-200">
-                                {variant.image ? (
-                                  <div className="w-10 h-10 rounded-md overflow-hidden border border-gray-200 mr-2 flex-shrink-0">
-                                    <img 
-                                      src={variant.image} 
-                                      alt="" 
-                                      className="w-full h-full object-cover" 
-                                      onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
-                                      loading="lazy"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-10 h-10 rounded-md flex items-center justify-center bg-gray-100 mr-2 flex-shrink-0">
-                                    <PackageIcon className="h-5 w-5 text-gray-400" />
-                                  </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    {variant.sku && (
-                                      <span className="px-1.5 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs">
-                                        SKU: {variant.sku}
-                                      </span>
-                                    )}
-                                    {variant.stock !== undefined && (
-                                      <span className="px-1.5 py-0.5 bg-blue-50 rounded-full text-blue-700 text-xs">
-                                        庫存: {variant.stock}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="mt-1 flex items-center gap-2">
-                                    {(variant.color || variant.size) && (
-                                      <span className="text-xs text-gray-700">
-                                        {variant.color && variant.color !== 'null' ? variant.color : ''}
-                                        {variant.color && variant.size && variant.color !== 'null' && variant.size !== 'null' ? ' / ' : ''}
-                                        {variant.size && variant.size !== 'null' ? variant.size : ''}
-                                      </span>
-                                    )}
-                                    {variant.price && (
-                                      <span className="text-xs font-medium text-brandBlue-dark">
-                                        NT$ {variant.price}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  <p>無適用商品</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            // 分組顯示商品和規格
+            <div className="max-h-[60vh] overflow-y-auto p-1">
+              {Object.keys(groupedProducts).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.values(groupedProducts).map((group, groupIndex) => {
+                    const mainProduct = group.mainProduct || (group.variants.length > 0 ? group.variants[0] : null);
+                    if (!mainProduct) return null;
+                    
+                    return (
+                      <div key={`group-${groupIndex}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                        {/* 主商品資訊 */}
+                        <div className="flex items-start p-4 border-b border-gray-100">
+                          {mainProduct.image ? (
+                            <div className="w-20 h-20 rounded-md overflow-hidden border border-gray-200 mr-4 flex-shrink-0">
+                              <img 
+                                src={mainProduct.image} 
+                                alt={mainProduct.name} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-20 h-20 rounded-md overflow-hidden flex items-center justify-center bg-gray-100 mr-4 flex-shrink-0">
+                              <PackageIcon className="h-10 w-10 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                              {mainProduct.name || "未命名商品"}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-2 text-sm mb-2">
+                              {mainProduct.product_id && (
+                                <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs whitespace-nowrap">
+                                  商品編號: {mainProduct.product_id}
+                                </span>
+                              )}
+                              {group.variants.length > 0 && (
+                                <span className="px-2 py-0.5 bg-orange-50 rounded-full text-orange-700 text-xs whitespace-nowrap">
+                                  {group.variants.length} 件規格商品
+                                </span>
+                              )}
+                              {group.variants.length > 0 && (
+                                <span className="px-2 py-0.5 bg-amber-50 rounded-full text-amber-700 text-xs whitespace-nowrap">
+                                  總庫存: {group.variants.reduce((total, v) => total + (parseInt(v.stock) || 0), 0)}
+                                </span>
+                              )}
+                              {mainProduct.category_name && (
+                                <span className="px-2 py-0.5 bg-green-50 rounded-full text-green-700 text-xs whitespace-nowrap">
+                                  分類: {mainProduct.category_name}
+                                </span>
+                              )}
+                            </div>
+                            {mainProduct.price && (
+                              <div className="mt-1">
+                                <span className="font-medium text-brandBlue-dark">
+                                  NT$ {mainProduct.price}
+                                </span>
                               </div>
-                            ))}
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-gray-500">
-                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                <p>無適用商品</p>
-              </div>
-            )}
-          </div>
-        );
-      }
-      
-      // 分類列表
-      else if (applicableType === "categories" || applicableType === "applicable_categories") {
-        return (
-          <div className="max-h-[60vh] overflow-y-auto p-1">
-            {items.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {items.map((item, index) => {
-                  const categoryName = item.name || 
-                    (item.parent_category && item.child_category 
-                      ? `${item.parent_category} - ${item.child_category}` 
-                      : "未知分類");
-                  
-                  return (
-                    <div key={item.id || `item-${index}`} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all bg-white">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mr-3 flex-shrink-0">
-                          <TagIcon className="h-5 w-5 text-green-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-gray-800 block truncate">{categoryName}</span>
-                          {(item.parent_id || item.parent_category) && (
-                            <span className="text-xs text-gray-500 block truncate mt-0.5">
-                              {item.parent_category || `分類 ID: ${item.parent_id}`}
-                            </span>
-                          )}
-                        </div>
+                        
+                        {/* 規格列表 */}
+                        {group.variants.length > 0 && (
+                          <div className="p-3 bg-gray-50">
+                            <p className="text-sm font-medium text-gray-500 mb-2">已選擇的規格 ({group.variants.length})</p>
+                            <div className="flex flex-wrap gap-2">
+                              {group.variants.map((variant, vIndex) => {
+                                const hasSize = variant.size && variant.size !== 'null';
+                                const hasColor = variant.color && variant.color !== 'null';
+                                
+                                return (
+                                  <span 
+                                    key={`variant-${vIndex}`} 
+                                    className="px-2 py-1 bg-brandBlue-ultraLight text-xs rounded-full border border-brandBlue-light text-brandBlue-dark"
+                                    title={variant.spec_id ? `規格ID: ${variant.spec_id}` : ''}
+                                  >
+                                    {!hasSize && !hasColor && "標準規格"}
+                                    {hasSize && `${variant.size}`}
+                                    {hasSize && hasColor ? ' / ' : ''}
+                                    {hasColor && variant.color}
+                                    {variant.price && ` - NT$ ${variant.price}`}
+                                    {variant.stock && ` (庫存: ${variant.stock})`}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-gray-500">
-                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                <p>無適用分類</p>
-              </div>
-            )}
-          </div>
-        );
-      }
-      
-      // 會員列表
-      else if (applicableType === "users") {
-        return (
-          <div className="max-h-[60vh] overflow-y-auto p-1">
-            {items.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {items.map((item, index) => (
-                  <div key={item.id || `item-${index}`} className="flex items-center border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all bg-white">
-                    <div className="w-12 h-12 rounded-full bg-brandBlue-ultraLight text-brandBlue-normal font-bold flex items-center justify-center mr-3 flex-shrink-0">
-                      {item.name ? item.name.charAt(0).toUpperCase() : '?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">{item.name || "未命名會員"}</h4>
-                      {item.email && (
-                        <div className="text-sm text-gray-500 flex items-center mt-1 truncate">
-                          <MailIcon className="h-3 w-3 mr-1 flex-shrink-0" />
-                          <span className="truncate">{item.email}</span>
-                        </div>
-                      )}
-                    </div>
-                    {item.created_at && (
-                      <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-full whitespace-nowrap">
-                        <span>
-                          {new Date(item.created_at).toLocaleDateString('zh-TW', { 
-                            year: 'numeric', 
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-gray-500">
-                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                <p>無適用會員</p>
-              </div>
-            )}
-          </div>
-        );
-      }
-      
-      // 移除預設的表格顯示方式，使用上述的卡片式佈局
-      return (
-        <div className="py-8 text-center text-gray-500">
-          <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-          <p>未知的適用範圍類型</p>
-        </div>
-      );
-    };
-    
-    return (
-      <Dialog open={showApplicableModal} onOpenChange={setShowApplicableModal}>
-        <DialogContent className="sm:max-w-[600px] transition-all duration-300 ease-out fade-in will-change-transform will-change-opacity">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>{title}</DialogTitle>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  <p>無適用商品</p>
+                </div>
+              )}
             </div>
-          </DialogHeader>
-          <div className="py-4">
-            {renderContent()}
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     );
@@ -839,6 +760,19 @@ const Marketing = () => {
                           {detailItem.products.length} 件商品
                         </span>
                       )}
+                      {detailItem.applicable_products?.length > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
+                          e.stopPropagation(); 
+                          // 設置當前優惠券作為詳細項目
+                          setDetailItem(detailItem);
+                          // 確保 detailItem 已正確設置
+                          console.log("點擊了優惠券適用商品按鈕", detailItem);
+                          handleShowApplicable("applicable_products", e);
+                        }}>
+                          <PackageIcon className="h-3 w-3 mr-1" />
+                          {detailItem.applicable_products.length} 件商品
+                        </span>
+                      )}
                       {detailItem.categories?.length > 0 && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
                           e.stopPropagation(); 
@@ -850,6 +784,19 @@ const Marketing = () => {
                         }}>
                           <TagIcon className="h-3 w-3 mr-1" />
                           {detailItem.categories.length} 個分類
+                        </span>
+                      )}
+                      {detailItem.applicable_categories?.length > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
+                          e.stopPropagation(); 
+                          // 設置當前優惠券作為詳細項目
+                          setDetailItem(detailItem);
+                          // 確保 detailItem 已正確設置
+                          console.log("點擊了優惠券適用分類按鈕", detailItem);
+                          handleShowApplicable("applicable_categories", e);
+                        }}>
+                          <TagIcon className="h-3 w-3 mr-1" />
+                          {detailItem.applicable_categories.length} 個分類
                         </span>
                       )}
                       {detailItem.users?.length > 0 && (
@@ -1107,6 +1054,19 @@ const Marketing = () => {
                                 {coupon.products.length} 件商品
                               </span>
                             )}
+                            {coupon.applicable_products?.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
+                                e.stopPropagation(); 
+                                // 設置當前優惠券作為詳細項目
+                                setDetailItem(coupon);
+                                // 確保 detailItem 已正確設置
+                                console.log("點擊了優惠券適用商品按鈕", coupon);
+                                handleShowApplicable("applicable_products", e);
+                              }}>
+                                <PackageIcon className="h-3 w-3 mr-1" />
+                                {coupon.applicable_products.length} 件商品
+                              </span>
+                            )}
                             {coupon.categories?.length > 0 && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
                                 e.stopPropagation(); 
@@ -1118,6 +1078,19 @@ const Marketing = () => {
                               }}>
                                 <TagIcon className="h-3 w-3 mr-1" />
                                 {coupon.categories.length} 個分類
+                              </span>
+                            )}
+                            {coupon.applicable_categories?.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
+                                e.stopPropagation(); 
+                                // 設置當前優惠券作為詳細項目
+                                setDetailItem(coupon);
+                                // 確保 detailItem 已正確設置
+                                console.log("點擊了優惠券適用分類按鈕", coupon);
+                                handleShowApplicable("applicable_categories", e);
+                              }}>
+                                <TagIcon className="h-3 w-3 mr-1" />
+                                {coupon.applicable_categories.length} 個分類
                               </span>
                             )}
                             {coupon.users?.length > 0 && (

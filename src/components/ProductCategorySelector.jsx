@@ -105,7 +105,7 @@ const ProductCategorySelector = ({
         fetchCategories();
       }
     }
-  }, [isOpen, type]);
+  }, [isOpen]);
 
   // 當選擇器打開時，根據已選項目設置初始狀態
   useEffect(() => {
@@ -130,51 +130,70 @@ const ProductCategorySelector = ({
     return searchField.toLowerCase().includes(filter.toLowerCase());
   });
 
-  // 切換選中狀態
+  // 處理產品選擇狀態變更
   const toggleProductSelection = (product) => {
-    // 確保產品有唯一標識
-    const productId = product.id || product.spec_id;
-    if (!productId) {
-      console.error('無法選擇商品：缺少唯一標識符', product);
-      return;
-    }
-    
-    // 使用更嚴格的比較方式尋找已選中的產品
-    const productIndex = selected.findIndex(item => {
-      // 如果是規格產品，使用spec_id比較
-      if (product.spec_id && item.spec_id) {
-        return item.spec_id === product.spec_id;
-      }
-      // 如果是分類，使用一般id比較
-      return item.id === productId;
-    });
-    
     let newSelected = [...selected];
     
-    if (productIndex === -1) {
-      // 如果是選擇規格，確保包含足夠的資訊
-      if (product.spec_id) {
-        // 確保規格產品包含完整資訊
+    // 獲取正確的product_id和spec_id
+    const productId = product.product_id || product.main_product_id || '';
+    const specId = product.spec_id || '';
+    
+    console.log('切換產品選擇狀態:', { productId, specId, product });
+    
+    if (!productId) {
+      console.warn('無法切換選擇狀態: 產品缺少product_id', product);
+    }
+    
+    // 檢查產品是否已被選中 - 使用spec_id或product_id作為識別依據
+    const productIndex = newSelected.findIndex(p => {
+      // 如果有spec_id，則按spec_id檢查，這是規格的唯一標識
+      if (specId && p.spec_id === specId) {
+        return true;
+      }
+      
+      // 如果没有spec_id，則按product_id檢查，這是商品的唯一標識
+      if (!specId && p.product_id === productId) {
+        return true;
+      }
+      
+      // 兼容舊數據格式
+      return p.id === product.id;
+    });
+    
+    const isSelected = productIndex !== -1;
+    
+    if (!isSelected) {
+      // 添加新選擇
+      if (product.variants || product.color || product.size) {
+        // 選擇一個有規格的完整產品
         const completeProduct = {
-          ...product,
-          id: product.spec_id, // 使用 spec_id 作為唯一識別符
-          product_id: product.product_id, // 保留主產品 ID
-          product_main_id: product.product_id, // 保存與主產品的關聯
-          name: product.product_name || product.name,
-          sku: product.sku,
-          price: product.price,
-          stock: product.stock,
-          color: product.color,
-          size: product.size,
-          image: product.image
+          id: specId || `spec_${Math.random().toString(36).substring(2, 7)}`, // 以規格ID為優先
+          spec_id: specId, // 規格流水號
+          product_id: productId, // 商品編號（如"pa001"）
+          product_main_id: product.product_main_id || productId,
+          name: product.name || "未命名商品",
+          price: product.price || 0,
+          color: product.color === 'null' ? null : product.color,
+          size: product.size === 'null' ? null : product.size,
+          sku: product.sku || "",
+          stock: product.stock || 0,
+          image: product.image || "https://via.placeholder.com/100?text=無圖片",
+          description: product.description || "",
+          category_name: product.category_name || ""
         };
         newSelected.push(completeProduct);
       } else {
         // 選擇主產品或分類
-        newSelected.push({
+        const completeItem = {
           ...product,
-          id: productId, // 確保ID存在
-        });
+          id: product.id || productId, // 確保ID存在
+          product_id: productId, // 商品編號
+          spec_id: specId // 規格流水號
+        };
+        
+        // 建立深度拷貝，避免參考關係問題
+        const itemToAdd = JSON.parse(JSON.stringify(completeItem));
+        newSelected.push(itemToAdd);
       }
     } else {
       // 移除已選產品
@@ -193,24 +212,30 @@ const ProductCategorySelector = ({
     let newSelected = [...selected];
     
     if (isSelected) {
-      // 移除所有相關規格
+      // 只移除當前產品的相關規格，而不影響其他產品的選擇
       newSelected = newSelected.filter(item => 
         !(item.product_main_id === product.id || 
-          item.id === product.id)
+          (item.id === product.id && item.spec_id))
       );
     } else {
-      // 先移除任何可能存在的相關規格
+      // 先移除當前產品的相關規格，保留其他產品的選擇
       newSelected = newSelected.filter(item => 
         !(item.product_main_id === product.id || 
-          item.id === product.id)
+          (item.id === product.id && item.spec_id))
       );
       
-      // 添加所有規格
+      // 添加所有規格，使用產品主圖而非規格圖片
       specs.forEach(spec => {
+        // 確保規格資料完整
+        if (!spec.spec_id && !spec.id) {
+          console.warn('規格缺少ID:', spec);
+          return;
+        }
+        
         const completeSpec = {
-          id: spec.spec_id, // 使用 spec_id 作為唯一識別符
-          spec_id: spec.spec_id,
-          product_id: spec.product_id,
+          id: spec.spec_id || spec.id, // 使用 spec_id 作為唯一識別符
+          spec_id: spec.spec_id || spec.id,
+          product_id: spec.product_id || product.id,
           product_main_id: product.id, // 保存與主產品的關聯
           name: spec.product_name || spec.name || product.name,
           sku: spec.sku,
@@ -218,9 +243,12 @@ const ProductCategorySelector = ({
           stock: spec.stock,
           color: spec.color !== 'null' ? spec.color : null,
           size: spec.size !== 'null' ? spec.size : null,
-          image: spec.image
+          // 一律使用產品主圖，避免403錯誤
+          image: product.image || "https://via.placeholder.com/100?text=無圖片"
         };
-        newSelected.push(completeSpec);
+        
+        // 使用深度拷貝避免參考問題
+        newSelected.push(JSON.parse(JSON.stringify(completeSpec)));
       });
     }
     
@@ -478,16 +506,30 @@ const ProductCategorySelector = ({
     // 按商品名稱分組，同時整合尺寸和顏色等規格信息
     const groupedItems = {};
     
+    console.log('原始商品數據:', filteredItems);
+    
     filteredItems.forEach(item => {
       // 確保 item 是有效的
-      if (!item || !item.name) return;
+      if (!item || !item.name) {
+        console.warn('忽略無效項目:', item);
+        return;
+      }
       
-      // 使用商品名作為分組鍵
-      const key = item.name;
+      // 正確獲取product_id (例如 "pa001")
+      const productId = item.product_id || item.main_product_id || '';
       
-      // 獲取 id、價格等資訊
-      // 注意：在 API 中，id 實際上是 spec_id
-      const specId = item.id || `spec_${Math.random().toString(36).substring(2, 9)}`;
+      // 正確獲取spec_id (規格流水號，例如 "1", "2" 等)
+      const specId = item.spec_id || '';
+      
+      if (!productId) {
+        console.warn('項目缺少product_id:', item);
+      }
+      
+      console.log(`處理商品: ${item.name}, product_id: ${productId}, spec_id: ${specId}`);
+      
+      // 使用product_id作為分組鍵，確保同一個商品的不同規格被分到一起
+      const key = productId || item.name;
+      
       const productName = item.name;
       const price = item.price || 0;
       const image = item.image || '';
@@ -500,29 +542,40 @@ const ProductCategorySelector = ({
       if (!groupedItems[key]) {
         // 創建分組的基本信息
         groupedItems[key] = {
+          id: productId, // 使用product_id作為主商品ID
+          product_id: productId, // 商品編號 (例如 "pa001")
           name: productName,
           basePrice: price,
           image: image,
           description: description,
           variants: [],
+          category_name: item.category_name || '',
           mainItem: item // 保存第一個規格作為主商品對象
         };
       }
       
       // 添加規格變體 (每個 API 返回的物件都是一個規格)
       groupedItems[key].variants.push({
-        id: specId,
+        id: specId, // 以spec_id作為唯一標識
+        spec_id: specId, // 規格流水號
+        product_id: productId, // 商品編號
         size: size,
         color: color,
         stock: stock,
         price: price,
         sku: sku,
-        fullItem: item // 保存完整的商品對象
+        fullItem: {
+          ...item,
+          product_id: productId, // 確保product_id正確
+          spec_id: specId // 確保spec_id正確
+        } // 保存完整的商品對象
       });
     });
     
     // 將分組對象轉換為數組
-    return Object.values(groupedItems);
+    const result = Object.values(groupedItems);
+    console.log('格式化後的商品數據:', result);
+    return result;
   };
   
   // 使用格式化的商品數據
@@ -530,22 +583,34 @@ const ProductCategorySelector = ({
   
   // 處理變體選擇
   const handleVariantSelect = (variant, groupItem) => {
-    // 找到完整的商品對象
-    const fullItem = variant.fullItem;
+    // 從變體中獲取完整的商品資訊
+    const fullItem = variant.fullItem || {};
+    
+    // 確保完整的商品資訊具有正確的規格資訊
+    fullItem.spec_id = variant.spec_id || variant.id; // 規格流水號
+    fullItem.product_id = variant.product_id || groupItem.product_id; // 商品編號
+    
+    // 使用主商品圖片，避免403錯誤
+    fullItem.image = groupItem.image || "https://via.placeholder.com/100?text=無圖片";
+    
     if (!fullItem.id && variant.id) {
       fullItem.id = variant.id; // 確保fullItem有ID
     }
-    toggleProductSelection(fullItem);
+    
+    // 補充必要屬性
+    fullItem.product_main_id = groupItem.id; // 設為product_id
+    fullItem.product_id = groupItem.product_id; // 商品編號
+    fullItem.name = fullItem.name || groupItem.name;
+    
+    // 使用深度拷貝，避免參考問題
+    const itemToSelect = JSON.parse(JSON.stringify(fullItem));
+    toggleProductSelection(itemToSelect);
   };
   
   // 處理全選該商品的所有規格
   const handleSelectAllVariants = (groupItem) => {
-    groupItem.variants.forEach(variant => {
-      const isSelected = selected.some(s => s.id === variant.id);
-      if (!isSelected) {
-        toggleProductSelection(variant.fullItem);
-      }
-    });
+    // 使用toggleAllSpecifications進行全選
+    toggleAllSpecifications(groupItem, groupItem.variants, false);
   };
   
   // 產品列表項目渲染
@@ -557,6 +622,9 @@ const ProductCategorySelector = ({
     const isAllSelected = selectedVariants.length === item.variants.length && item.variants.length > 0;
     const isPartiallySelected = selectedVariants.length > 0 && !isAllSelected;
     
+    // 確保有預設圖片
+    const productImage = item.image || "https://via.placeholder.com/100?text=無圖片";
+    
     return (
       <div 
         key={`product_${item.name}_${Math.random().toString(36).substring(2, 7)}`} 
@@ -567,17 +635,15 @@ const ProductCategorySelector = ({
         )}
       >
         <div className="flex items-start">
-          {/* 商品圖片 */}
-          {item.image && (
-            <div className="w-20 h-20 rounded overflow-hidden border border-gray-200 mr-4 flex-shrink-0">
-              <img 
-                src={item.image} 
-                alt={item.name} 
-                className="w-full h-full object-cover" 
-                onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
-              />
-            </div>
-          )}
+          {/* 只顯示商品主圖，並處理圖片載入錯誤 */}
+          <div className="w-20 h-20 rounded overflow-hidden border border-gray-200 mr-4 flex-shrink-0">
+            <img 
+              src={productImage} 
+              alt={item.name} 
+              className="w-full h-full object-cover" 
+              onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
+            />
+          </div>
           
           {/* 商品資訊 */}
           <div className="flex flex-col flex-1">
@@ -594,13 +660,10 @@ const ProductCategorySelector = ({
                     onCheckedChange={() => {
                       if (isAllSelected) {
                         // 如果全部選中，則取消選中所有
-                        item.variants.forEach(v => {
-                          const foundSelected = selected.find(s => s.id === v.id);
-                          if (foundSelected) toggleProductSelection(foundSelected);
-                        });
+                        toggleAllSpecifications(item, item.variants, true);
                       } else {
-                        // 否則全選
-                        handleSelectAllVariants(item);
+                        // 使用toggleAllSpecifications進行全選
+                        toggleAllSpecifications(item, item.variants, false);
                       }
                     }}
                     className="mr-2"
@@ -632,6 +695,33 @@ const ProductCategorySelector = ({
             </div>
           </div>
         </div>
+        
+        {/* 已選擇的規格摘要顯示 */}
+        {selectedVariants.length > 0 && (
+          <div className="mt-4 pl-2 border-t border-dashed border-gray-200 pt-2">
+            <div className="text-xs font-medium text-gray-700 mb-2">已選規格：</div>
+            <div className="flex flex-wrap gap-2">
+              {selectedVariants.map(variant => {
+                const hasSize = variant.size && variant.size !== 'null';
+                const hasColor = variant.color && variant.color !== 'null';
+                
+                return (
+                  <Badge 
+                    key={variant.id} 
+                    variant="outline"
+                    className="bg-brandBlue-ultraLight text-xs py-1"
+                  >
+                    {!hasSize && !hasColor && "標準規格"}
+                    {hasSize && `${variant.size}`}
+                    {hasSize && hasColor ? ' / ' : ''}
+                    {hasColor && variant.color}
+                    {` - NT$ ${variant.price}`}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+        )}
         
         {/* 規格變體列表 */}
         {item.variants.length > 0 && (
@@ -682,7 +772,9 @@ const ProductCategorySelector = ({
                       </div>
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
                         <span>NT$ {variant.price}</span>
-                        <span>庫存: {variant.stock}</span>
+                        <span className={variant.stock <= 0 ? "text-red-500 font-medium" : "text-blue-600"}>
+                          庫存: {variant.stock || 0}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -708,7 +800,13 @@ const ProductCategorySelector = ({
         {/* 標題區域 */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
-            選擇{type === "products" ? "商品" : type === "categories" ? "分類" : "使用者"}
+            選擇{
+              type === "products" ? "商品" : 
+              type === "applicable_products" ? "適用商品" : 
+              type === "categories" ? "分類" : 
+              type === "applicable_categories" ? "適用分類" : 
+              "使用者"
+            }
           </h2>
           <button 
             onClick={onClose}
@@ -726,13 +824,19 @@ const ProductCategorySelector = ({
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder={`搜尋${type === "products" ? "商品" : type === "categories" ? "分類" : "使用者"}...`}
+                placeholder={`搜尋${
+                  type === "products" ? "商品" : 
+                  type === "applicable_products" ? "適用商品" : 
+                  type === "categories" ? "分類" : 
+                  type === "applicable_categories" ? "適用分類" : 
+                  "使用者"
+                }...`}
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 className="pl-10 w-full"
               />
             </div>
-            {type === 'products' && (
+            {(type === 'products' || type === 'applicable_products') && (
               <div className="w-40">
                 <Select 
                   value={filterType} 

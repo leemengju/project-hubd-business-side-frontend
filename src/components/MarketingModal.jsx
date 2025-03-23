@@ -365,6 +365,11 @@ const MarketingModal = ({
     }
   }, [formData]);
 
+  // 開啟用戶選擇器
+  const openUserSelector = useCallback(() => {
+    setShowUserSelector(true);
+  }, []);
+
   // 商品/分類選擇確認
   const handleSelectorConfirm = (items) => {
     if (selectorType === 'products') {
@@ -396,30 +401,61 @@ const MarketingModal = ({
     } 
     else if (selectorType === 'applicable_products') {
       // 確保所有適用商品都有必要的屬性
-      const formattedApplicableProducts = items.map(item => ({
-        id: item.id || item.spec_id || `applicable_product_${Math.random().toString(36).substring(2, 9)}`, // 確保ID存在
-        spec_id: item.spec_id || null,
-        product_id: item.product_id || null,
-        product_main_id: item.product_main_id || item.product_id || null,
-        name: item.name || item.product_name || '未命名商品',
-        sku: item.sku || '',
-        price: item.price || 0,
-        color: item.color === 'null' ? null : (item.color || null),
-        size: item.size === 'null' ? null : (item.size || null),
-        image: item.image || ''
-      }));
+      const formattedApplicableProducts = items.map(item => {
+        // 正確獲取product_id和spec_id
+        const productId = item.product_id || item.main_product_id || '';
+        const specId = item.spec_id || '';
+        
+        // 產品資訊完整性檢查
+        console.log('處理適用商品項目:', {
+          name: item.name,
+          product_id: productId,
+          spec_id: specId
+        });
+        
+        if (!productId) {
+          console.warn('警告: 商品缺少product_id', item);
+        }
+        
+        return {
+          id: specId || `applicable_product_${Math.random().toString(36).substring(2, 9)}`,
+          spec_id: specId, // 規格流水號
+          product_id: productId, // 商品編號，如 "pa001"
+          product_main_id: item.product_main_id || productId, // 主商品ID，用於分組
+          name: item.name || item.product_name || '未命名商品',
+          sku: item.sku || '',
+          price: item.price || 0,
+          color: item.color === 'null' ? null : (item.color || null),
+          size: item.size === 'null' ? null : (item.size || null),
+          image: item.image || '',
+          stock: item.stock || 0,
+          category_name: item.category_name || '',
+          description: item.description || '',
+          // 添加用於偵錯的訊息
+          _debug_info: `product_id: ${productId}, spec_id: ${specId}, stock: ${item.stock || 0}`
+        };
+      });
+      
+      // 驗證並過濾無效數據
+      const validProducts = formattedApplicableProducts.filter(product => {
+        return product.product_id && product.name;
+      });
+      
+      if (validProducts.length < formattedApplicableProducts.length) {
+        console.warn(`已忽略 ${formattedApplicableProducts.length - validProducts.length} 個無效商品數據`);
+      }
       
       // 更新表單資料
       setFormData(prev => ({
         ...prev,
-        applicable_products: formattedApplicableProducts
+        applicable_products: validProducts
       }));
       
       // 標記表單已修改
       setIsDirty(true);
       
       // 記錄日誌
-      console.log('已選擇適用商品:', formattedApplicableProducts);
+      console.log('已選擇適用商品:', validProducts);
     }
     else if (selectorType === 'categories') {
       // 確保所有分類都有必要的屬性
@@ -837,7 +873,13 @@ const MarketingModal = ({
           status: 'disabled'
         };
         setFormData(updatedFormData);
-        toast.info('由於日期已過期，狀態已自動設為停用');
+        toast("由於日期已過期，狀態已自動設為停用", {
+          icon: '📝',
+          style: {
+            background: '#2196F3',
+            color: '#fff',
+          }
+        });
       }
       
       // 確保日期格式正確 (YYYY-MM-DD)
@@ -1381,7 +1423,11 @@ const MarketingModal = ({
           price: item.price || 0,
           color: item.color || null,
           size: item.size || null,
-          image: item.image || ''
+          image: item.image || '',
+          // 確保不會丟失任何重要屬性
+          stock: item.stock,
+          category_name: item.category_name || item.category,
+          description: item.description
         })),
         applicable_categories: applicable_categories.map(item => ({
           id: item.id,
@@ -1811,7 +1857,7 @@ const MarketingModal = ({
                     {/* 適用範圍選擇 */}
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <Label>適用範圍</Label>
+                        <Label>適用商品</Label>
                         <Button
                           type="button"
                           variant="outline"
@@ -1825,6 +1871,25 @@ const MarketingModal = ({
                         </Button>
                       </div>
                       {renderApplicableProducts()}
+                    </div>
+
+                    {/* 新增適用分類選擇 */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>適用分類</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedSelectorItems(formData.applicable_categories || []);
+                            setSelectorType('applicable_categories');
+                            setShowSelector(true);
+                          }}
+                        >
+                          選擇分類
+                        </Button>
+                      </div>
+                      {renderApplicableCategories()}
                     </div>
 
                     {/* 使用條件 */}
@@ -1939,7 +2004,13 @@ const MarketingModal = ({
                                 if (formData.end_date && new Date(newDate) > new Date(formData.end_date)) {
                                   // 把結束日期設為開始日期
                                   handleFormChange('end_date', newDate);
-                                  toast.info('已自動調整結束日期與開始日期一致');
+                                  toast("已自動調整結束日期與開始日期一致", {
+                                    icon: '📅',
+                                    style: {
+                                      background: '#2196F3',
+                                      color: '#fff',
+                                    }
+                                  });
                                 }
                               }}
                               className={formErrors.start_date ? "border-red-500" : ""}
@@ -2274,7 +2345,13 @@ const MarketingModal = ({
                               if (formData.end_date && new Date(newDate) > new Date(formData.end_date)) {
                                 // 把結束日期設為開始日期
                                 handleFormChange('end_date', newDate);
-                                toast.info('已自動調整結束日期與開始日期一致');
+                                toast("已自動調整結束日期與開始日期一致", {
+                                  icon: '📅',
+                                  style: {
+                                    background: '#2196F3',
+                                    color: '#fff',
+                                  }
+                                });
                               }
                             }}
                             className={formErrors.start_date ? "border-red-500" : ""}
