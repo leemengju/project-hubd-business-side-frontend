@@ -22,7 +22,8 @@ import {
   FileTextIcon as DocumentIcon,
   MailIcon,
   PhoneIcon,
-  CakeIcon
+  CakeIcon,
+  FolderIcon
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -545,12 +546,48 @@ const Marketing = () => {
         <DialogContent className="sm:max-w-[600px] transition-all duration-300 ease-out will-change-transform will-change-opacity">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <DialogTitle>{title}</DialogTitle>
+              <DialogTitle className="flex items-center">
+                {applicableType === "applicable_categories" && <FolderIcon className="h-5 w-5 text-green-500 mr-2" />}
+                {applicableType === "categories" && <FolderIcon className="h-5 w-5 text-green-500 mr-2" />}
+                {(applicableType === "applicable_products" || applicableType === "products") && <PackageIcon className="h-5 w-5 text-blue-500 mr-2" />}
+                {title} ({items.length})
+              </DialogTitle>
             </div>
           </DialogHeader>
           
-          {/* 如果無法分組，顯示原始列表 */}
-          {!isGroupable ? (
+          {/* 當顯示類別時使用特殊樣式 */}
+          {applicableType === "applicable_categories" || applicableType === "categories" ? (
+            <div className="max-h-[60vh] overflow-y-auto p-1">
+              {items.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {items.map((category, index) => (
+                    <div 
+                      key={category.id || `category-${index}`} 
+                      className="border border-green-100 rounded-lg p-3 bg-green-50 hover:bg-green-100 transition-colors shadow-sm"
+                    >
+                      <div className="flex items-center">
+                        <div className="mr-3 bg-white p-2 rounded-full">
+                          <FolderIcon className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-green-800">{category.name}</h3>
+                          <div className="flex items-center mt-1 text-xs text-green-600">
+                            <TagIcon className="h-3 w-3 mr-1" /> 
+                            分類ID: {category.id}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <FolderIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  <p>無適用分類</p>
+                </div>
+              )}
+            </div>
+          ) : !isGroupable ? (
             <div className="max-h-[60vh] overflow-y-auto p-1">
               {items.length > 0 ? (
                 <div className="space-y-4">
