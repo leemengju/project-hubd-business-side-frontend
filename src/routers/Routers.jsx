@@ -36,7 +36,6 @@ const AppRouter = () => {
             <Route path="cash-flow" element={<CashFlow />} />
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
-            <Route path="order" element={<Order />} />
             <Route path="setting" element={<Setting />} />
           </Route>
 
