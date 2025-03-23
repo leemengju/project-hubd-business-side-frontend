@@ -22,26 +22,50 @@ const UserSelector = ({ isOpen, onClose, selectedUsers = [], onConfirm }) => {
   const [filterType, setFilterType] = useState("name");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const mouseDownOutside = useRef(false);
 
-  // 處理點擊外部關閉 - 使用 mousedown 而非 click 以避免與 select 組件衝突
+  // 處理滑鼠按下事件
+  const handleMouseDown = (e) => {
+    // 確保點擊不是發生在 Select 組件內部
+    const isSelectElement = e.target.closest('[role="combobox"]') || 
+                           e.target.closest('[role="listbox"]');
+    
+    // 如果點擊是在模態視窗外部且不是Select組件
+    if (modalRef.current && !modalRef.current.contains(e.target) && !isSelectElement) {
+      mouseDownOutside.current = true;
+      // 阻止事件冒泡，避免觸發主視窗的事件
+      e.stopPropagation();
+    } else {
+      mouseDownOutside.current = false;
+    }
+  };
+
+  // 處理滑鼠放開事件
+  const handleMouseUp = (e) => {
+    // 確保點擊不是發生在 Select 組件內部
+    const isSelectElement = e.target.closest('[role="combobox"]') || 
+                           e.target.closest('[role="listbox"]');
+    
+    // 如果點擊是在模態視窗外部且不是Select組件
+    if (modalRef.current && !modalRef.current.contains(e.target) && !isSelectElement && mouseDownOutside.current) {
+      // 阻止事件冒泡，避免觸發主視窗的事件
+      e.stopPropagation();
+      onClose();
+    }
+    mouseDownOutside.current = false;
+  };
+
+  // 設置全域事件監聽
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      // 確保點擊不是發生在 Select 組件內部
-      const isSelectElement = event.target.closest('[role="combobox"]') || 
-                             event.target.closest('[role="listbox"]');
-      
-      if (modalRef.current && !modalRef.current.contains(event.target) && !isSelectElement) {
-        onClose();
-      }
-    };
-
     if (isOpen) {
-      // 使用 mousedown 事件而不是 click 事件
-      document.addEventListener('mousedown', handleClickOutside);
+      // 使用 mousedown 和 mouseup 事件
+      document.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('mouseup', handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isOpen, onClose]);
 
@@ -165,28 +189,27 @@ const UserSelector = ({ isOpen, onClose, selectedUsers = [], onConfirm }) => {
     }
   };
 
-  // 獲取月份名稱
+  // 取得月份名稱
   const getMonthName = (monthNumber) => {
-    if (!monthNumber) return "未知";
+    const months = [
+      "一月", "二月", "三月", "四月", "五月", "六月",
+      "七月", "八月", "九月", "十月", "十一月", "十二月"
+    ];
     
-    const months = ['一月', '二月', '三月', '四月', '五月', '六月', 
-                   '七月', '八月', '九月', '十月', '十一月', '十二月'];
-    return months[parseInt(monthNumber) - 1] || "未知";
+    return months[monthNumber] || "未知月份";
   };
 
   // 格式化註冊日期
   const formatRegistrationDate = (dateString) => {
-    if (!dateString) return { month: "未知", year: "未知" };
+    if (!dateString) return "未知";
     
-    try {
-      const date = new Date(dateString);
-      return {
-        month: getMonthName(date.getMonth() + 1),
-        year: date.getFullYear()
-      };
-    } catch (e) {
-      return { month: "未知", year: "未知" };
-    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "無效日期";
+    
+    const year = date.getFullYear();
+    const month = getMonthName(date.getMonth());
+    
+    return `${year}年${month}`;
   };
 
   // 防止 Select 內部的點擊事件傳播
@@ -283,65 +306,43 @@ const UserSelector = ({ isOpen, onClose, selectedUsers = [], onConfirm }) => {
           ) : (
             <div className="space-y-2">
               {filteredUsers.length > 0 ? (
-                filteredUsers.map(user => {
-                  const registrationInfo = formatRegistrationDate(user.created_at);
-                  return (
-                    <div 
-                      key={user.id} 
-                      className="flex items-start p-3 rounded-md border hover:bg-gray-50"
-                    >
-                      <div className="flex items-start space-x-3 flex-1">
-                        <div className="pt-1">
-                          <Checkbox
-                            id={`user-${user.id}`}
-                            checked={selected.some(u => u.id === user.id)}
-                            onCheckedChange={() => toggleSelection(user)}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <Label 
-                            htmlFor={`user-${user.id}`}
-                            className="flex items-center cursor-pointer mb-1"
-                          >
-                            <span className="font-medium text-gray-900">{user.name || "未命名會員"}</span>
-                            <span className="text-xs bg-gray-100 rounded-full px-2 py-0.5 ml-2 text-gray-600">
-                              #{user.id}
-                            </span>
-                          </Label>
-                          
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
-                            <div className="flex items-center text-xs text-gray-500">
-                              <MailIcon className="h-3 w-3 mr-1" />
-                              <span className="truncate">{user.email || "無電子郵件"}</span>
-                            </div>
-                            
-                            <div className="flex items-center text-xs text-gray-500">
-                              <CalendarIcon className="h-3 w-3 mr-1" />
-                              <span>註冊: {registrationInfo.year}年{registrationInfo.month}</span>
-                            </div>
-                            
-                            {user.birth_month && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <span className="text-pink-500 mr-1">🎂</span>
-                                <span>生日月份: {getMonthName(user.birth_month)}</span>
-                              </div>
-                            )}
-                            
-                            {user.phone && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <span className="mr-1">📱</span>
-                                <span>{user.phone}</span>
-                              </div>
-                            )}
+                filteredUsers.map(user => (
+                  <div 
+                    key={user.id} 
+                    className={cn(
+                      "flex items-center p-3 rounded-md border mb-2 hover:bg-gray-50 transition-colors",
+                      selected.some(u => u.id === user.id) && "border-brandBlue-normal bg-brandBlue-ultraLight"
+                    )}
+                  >
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Checkbox
+                        id={`user-${user.id}`}
+                        checked={selected.some(u => u.id === user.id)}
+                        onCheckedChange={() => toggleSelection(user)}
+                      />
+                      <Label 
+                        htmlFor={`user-${user.id}`}
+                        className="flex-1 cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{user.name || '未命名用戶'}</span>
+                          <div className="flex items-center text-xs text-gray-500 mt-1">
+                            <MailIcon className="h-3 w-3 mr-1" />
+                            <span>{user.email || '無郵箱'}</span>
                           </div>
                         </div>
-                      </div>
+                        
+                        <div className="flex items-center text-xs text-gray-500">
+                          <CalendarIcon className="h-3 w-3 mr-1" />
+                          <span>{formatRegistrationDate(user.created_at)}</span>
+                        </div>
+                      </Label>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  找不到符合條件的會員
+                <div className="text-center py-8 text-gray-500">
+                  {filter ? `沒有符合 "${filter}" 的會員` : '沒有可選擇的會員'}
                 </div>
               )}
             </div>

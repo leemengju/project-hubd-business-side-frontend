@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import ProductCategorySelector from "./ProductCategorySelector";
 import UserSelector from "./UserSelector";
 import { cn } from "@/lib/utils";
-import { XIcon, AlertCircleIcon, AlertTriangle } from "lucide-react";
+import { XIcon, AlertCircleIcon, AlertTriangle, FolderIcon, ShoppingBagIcon, UsersIcon, TagIcon, EyeIcon } from "lucide-react";
 import { 
   Select,
   SelectContent,
@@ -61,6 +61,11 @@ const MarketingModal = ({
   const closeConfirmRef = useRef(null);
   const token = localStorage.getItem('token');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectorJustClosed, setSelectorJustClosed] = useState(false);
+  const [showApplicableModal, setShowApplicableModal] = useState(false);
+  const [selectedSelectorItems, setSelectedSelectorItems] = useState([]);
+  // 添加初始化追蹤 ref
+  const formInitialized = useRef(false);
 
   // 輔助函數：判斷是否為已排程狀態（開始日期在將來）
   const isScheduled = (dateString) => {
@@ -271,8 +276,8 @@ const MarketingModal = ({
 
   // 處理外部點擊 (改為滑鼠放開事件)
   const handleMouseUp = (e) => {
-    // 只有當滑鼠按下和放開都在視窗外時，才觸發關閉確認
-    if (e.target === e.currentTarget && mouseDownOutside.current) {
+    // 只有當滑鼠按下和放開都在視窗外時，且沒有選擇器顯示時，才觸發關閉確認
+    if (e.target === e.currentTarget && mouseDownOutside.current && !showSelector && !showUserSelector && !selectorJustClosed) {
       handleCloseRequest();
     }
     // 重置滑鼠按下狀態
@@ -292,6 +297,34 @@ const MarketingModal = ({
 
   // 處理關閉請求，確認用戶是否真的需要保存數據
   const handleCloseRequest = () => {
+    // 如果選擇器或用戶選擇器正在顯示，先關閉它們
+    if (showSelector) {
+      setShowSelector(false);
+      setSelectorJustClosed(true);
+      
+      // 使用setTimeout，以確保在當前事件循環結束後重置標誌
+      setTimeout(() => {
+        setSelectorJustClosed(false);
+      }, 100);
+      return;
+    }
+    
+    if (showUserSelector) {
+      setShowUserSelector(false);
+      setSelectorJustClosed(true);
+      
+      // 使用setTimeout，以確保在當前事件循環結束後重置標誌
+      setTimeout(() => {
+        setSelectorJustClosed(false);
+      }, 100);
+      return;
+    }
+    
+    // 如果選擇器剛剛關閉，忽略這次關閉請求
+    if (selectorJustClosed) {
+      return;
+    }
+    
     // 如果表單已被修改，則顯示確認視窗
     if (isDirty) {
       setShowCloseConfirmation(true);
@@ -301,18 +334,138 @@ const MarketingModal = ({
     }
   };
 
-  const handleSelectorConfirm = (selectedItems) => {
-    if (type === 'coupons') {
-      setFormData({
-        ...formData,
-        [selectorType]: selectedItems
-      });
-    } else {
-      setFormData({
-        ...formData,
-        applicable_items: selectedItems
-      });
+  // 開啟選擇器（優化版）
+  const openSelector = useCallback((type) => {
+    setSelectorType(type);
+    
+    // 根據選擇器類型決定要顯示哪種選擇器
+    if (type === 'products' || type === 'applicable_products') {
+      // 獲取目前已選取的商品
+      const currentlySelected = type === 'products' 
+        ? formData.products || [] 
+        : formData.applicable_products || [];
+        
+      // 設置選擇器狀態
+      setSelectedSelectorItems(currentlySelected);
+      setShowSelector(true);
+    } 
+    else if (type === 'categories' || type === 'applicable_categories') {
+      // 獲取目前已選取的分類
+      const currentlySelected = type === 'categories' 
+        ? formData.categories || [] 
+        : formData.applicable_categories || [];
+      
+      // 設置選擇器狀態
+      setSelectedSelectorItems(currentlySelected);
+      setShowSelector(true);
     }
+    else if (type === 'users') {
+      // 設置選擇器狀態
+      setShowUserSelector(true);
+    }
+  }, [formData]);
+
+  // 商品/分類選擇確認
+  const handleSelectorConfirm = (items) => {
+    if (selectorType === 'products') {
+      // 確保所有商品都有必要的屬性
+      const formattedProducts = items.map(item => ({
+        id: item.id || item.spec_id || `product_${Math.random().toString(36).substring(2, 9)}`, // 確保ID存在
+        spec_id: item.spec_id || null,
+        product_id: item.product_id || null,
+        product_main_id: item.product_main_id || item.product_id || null,
+        name: item.name || item.product_name || '未命名商品',
+        sku: item.sku || '',
+        price: item.price || 0,
+        color: item.color === 'null' ? null : (item.color || null),
+        size: item.size === 'null' ? null : (item.size || null),
+        image: item.image || ''
+      }));
+      
+      // 更新表單資料
+      setFormData(prev => ({
+        ...prev,
+        products: formattedProducts
+      }));
+      
+      // 標記表單已修改
+      setIsDirty(true);
+      
+      // 記錄日誌
+      console.log('已選擇商品:', formattedProducts);
+    } 
+    else if (selectorType === 'applicable_products') {
+      // 確保所有適用商品都有必要的屬性
+      const formattedApplicableProducts = items.map(item => ({
+        id: item.id || item.spec_id || `applicable_product_${Math.random().toString(36).substring(2, 9)}`, // 確保ID存在
+        spec_id: item.spec_id || null,
+        product_id: item.product_id || null,
+        product_main_id: item.product_main_id || item.product_id || null,
+        name: item.name || item.product_name || '未命名商品',
+        sku: item.sku || '',
+        price: item.price || 0,
+        color: item.color === 'null' ? null : (item.color || null),
+        size: item.size === 'null' ? null : (item.size || null),
+        image: item.image || ''
+      }));
+      
+      // 更新表單資料
+      setFormData(prev => ({
+        ...prev,
+        applicable_products: formattedApplicableProducts
+      }));
+      
+      // 標記表單已修改
+      setIsDirty(true);
+      
+      // 記錄日誌
+      console.log('已選擇適用商品:', formattedApplicableProducts);
+    }
+    else if (selectorType === 'categories') {
+      // 確保所有分類都有必要的屬性
+      const formattedCategories = items.map(item => ({
+        id: item.id || `category_${Math.random().toString(36).substring(2, 9)}`,
+        name: item.name || '未命名分類',
+        parent_category: item.parent_category || null,
+        child_category: item.child_category || null
+      }));
+      
+      // 更新表單資料
+      setFormData(prev => ({
+        ...prev,
+        categories: formattedCategories
+      }));
+      
+      // 標記表單已修改
+      setIsDirty(true);
+      
+      // 記錄日誌
+      console.log('已選擇分類:', formattedCategories);
+    }
+    else if (selectorType === 'applicable_categories') {
+      // 確保所有適用分類都有必要的屬性
+      const formattedApplicableCategories = items.map(item => ({
+        id: item.id || `applicable_category_${Math.random().toString(36).substring(2, 9)}`,
+        name: item.name || '未命名分類',
+        parent_category: item.parent_category || null,
+        child_category: item.child_category || null
+      }));
+      
+      // 更新表單資料
+      setFormData(prev => ({
+        ...prev,
+        applicable_categories: formattedApplicableCategories
+      }));
+      
+      // 標記表單已修改
+      setIsDirty(true);
+      
+      // 記錄日誌
+      console.log('已選擇適用分類:', formattedApplicableCategories);
+    }
+    
+    // 關閉選擇器
+    setShowSelector(false);
   };
 
   // 處理啟用/禁用日期範圍
@@ -716,49 +869,710 @@ const MarketingModal = ({
     }
   }, [isOpen]);
 
-  // 處理表單變更
-  const handleFormChange = (field, value) => {
-    // 特殊處理日期欄位
-    if (field === 'start_date') {
-      // 更新表單數據
+  // 處理表單變更（優化版）
+  const handleFormChange = useCallback((field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // 標記表單已修改
+    setIsDirty(true);
+    
+    // 清除該欄位的錯誤 (如果有)
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [formErrors]);
+
+  // 折價券底部表單
+  const renderCouponForm = () => (
+    <div className="mt-4 space-y-6">
+      {/* 基本設定 */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">基本設定</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block font-medium">開始時間</label>
+            <input
+              type="datetime-local"
+              className={inputClasses}
+              value={formData.start_time || ''}
+              onChange={(e) => handleFormChange('start_time', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block font-medium">結束時間</label>
+            <input
+              type="datetime-local"
+              className={inputClasses}
+              value={formData.end_time || ''}
+              onChange={(e) => handleFormChange('end_time', e.target.value)}
+            />
+          </div>
+        </div>
+        {/* 日期時間錯誤 */}
+        {dateRangeError && (
+          <div className="text-red-500 flex items-center text-sm">
+            <AlertCircleIcon className="h-4 w-4 mr-1" />
+            <span>{dateRangeError}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 折扣設定 */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">折扣設定</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block font-medium">折扣類型</label>
+            <select
+              className={inputClasses}
+              value={formData.discount_type || 'percentage'}
+              onChange={(e) => handleFormChange('discount_type', e.target.value)}
+            >
+              <option value="percentage">百分比折扣</option>
+              <option value="fixed">固定金額折扣</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="block font-medium">
+              {formData.discount_type === 'fixed' ? '折扣金額' : '折扣百分比'}
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max={formData.discount_type === 'percentage' ? '100' : undefined}
+                className={inputClasses}
+                value={formData.discount_value || ''}
+                onChange={(e) => handleFormChange('discount_value', e.target.value)}
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                {formData.discount_type === 'fixed' ? 'NT$' : '%'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 使用條件 */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">使用條件</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block font-medium">最低消費金額</label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                className={inputClasses}
+                value={formData.min_purchase_amount || ''}
+                onChange={(e) => handleFormChange('min_purchase_amount', e.target.value)}
+                placeholder="不限制請留空"
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">NT$</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block font-medium">使用次數上限</label>
+            <input
+              type="number"
+              min="0"
+              className={inputClasses}
+              value={formData.usage_limit || ''}
+              onChange={(e) => handleFormChange('usage_limit', e.target.value)}
+              placeholder="不限制請留空"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 適用範圍設定 */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">適用範圍</h3>
+          {/* 添加總覽按鈕 */}
+          {(formData.products?.length > 0 || formData.categories?.length > 0 || formData.users?.length > 0) && (
+            <button
+              type="button"
+              onClick={() => setShowApplicableModal(true)}
+              className="flex items-center text-sm font-medium text-brandBlue-normal hover:text-brandBlue-dark transition-colors"
+            >
+              <EyeIcon className="h-4 w-4 mr-1" />
+              總覽
+            </button>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <label className="block font-medium">適用商品</label>
+              <button
+                type="button"
+                className="text-sm text-brandBlue-normal hover:text-brandBlue-dark transition-colors"
+                onClick={() => openSelector('products')}
+              >
+                選擇商品
+              </button>
+            </div>
+            <div className="border rounded-md p-2 min-h-[40px] bg-gray-50 text-sm">
+              {formData.products && formData.products.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {formData.products.map(item => (
+                    <div key={item.id} className="inline-flex items-center bg-white rounded-full pl-2 pr-1 py-1 text-xs border">
+                      <span className="truncate max-w-[150px]">
+                        {item.name}
+                        {item.color && item.color !== 'null' && ` (${item.color})`}
+                        {item.size && item.size !== 'null' && ` (${item.size})`}
+                      </span>
+                      <button 
+                        className="ml-1 text-gray-500 hover:text-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
+                        onClick={() => removeItem('products', item.id)}
+                      >
+                        <XIcon className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-gray-400">所有商品</span>
+              )}
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <label className="block font-medium">適用分類</label>
+              <button
+                type="button"
+                className="text-sm text-brandBlue-normal hover:text-brandBlue-dark transition-colors"
+                onClick={() => openSelector('categories')}
+              >
+                選擇分類
+              </button>
+            </div>
+            <div className="border rounded-md p-2 min-h-[40px] bg-gray-50 text-sm">
+              {formData.categories && formData.categories.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {formData.categories.map(item => (
+                    <div key={item.id} className="inline-flex items-center bg-white rounded-full pl-2 pr-1 py-1 text-xs border">
+                      <span className="truncate max-w-[150px]">{item.name || item.child_category}</span>
+                      <button 
+                        className="ml-1 text-gray-500 hover:text-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
+                        onClick={() => removeItem('categories', item.id)}
+                      >
+                        <XIcon className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-gray-400">所有分類</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 適用對象設定 */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">適用對象</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <label className="block font-medium">特定使用者</label>
+            <button
+              type="button"
+              className="text-sm text-brandBlue-normal hover:text-brandBlue-dark transition-colors"
+              onClick={() => openUserSelector()}
+            >
+              選擇使用者
+            </button>
+          </div>
+          <div className="border rounded-md p-2 min-h-[40px] bg-gray-50 text-sm">
+            {formData.users && formData.users.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {formData.users.map(item => (
+                  <div key={item.id} className="inline-flex items-center bg-white rounded-full pl-2 pr-1 py-1 text-xs border">
+                    <span className="truncate max-w-[150px]">{item.name || item.email}</span>
+                    <button 
+                      className="ml-1 text-gray-500 hover:text-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
+                      onClick={() => removeItem('users', item.id)}
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="text-gray-400">所有使用者</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 適用產品概覽視窗
+  const renderApplicableModal = () => {
+    const renderItem = (item) => {
+      // 根據不同的項目類型顯示不同的內容
+      if (item.isParent) {
+        // 這是一個父分類
+        return (
+          <div key={item.id} className="p-3 border-b last:border-b-0">
+            <div className="flex items-center">
+              <FolderIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <span className="font-medium">{item.name}</span>
+            </div>
+          </div>
+        );
+      } else if (item.color !== undefined || item.size !== undefined) {
+        // 這是一個商品規格
+        return (
+          <div key={item.id} className="p-3 border-b last:border-b-0 flex items-center space-x-2">
+            {item.image && (
+              <div className="w-12 h-12 rounded overflow-hidden border border-gray-200 flex-shrink-0">
+                <img 
+                  src={item.image} 
+                  alt={item.name} 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
+                />
+              </div>
+            )}
+            <div>
+              <div className="font-medium">{item.name}</div>
+              <div className="text-sm text-gray-500 flex items-center gap-2">
+                {item.sku && <span>SKU: {item.sku}</span>}
+                {item.color && item.color !== 'null' && (
+                  <span className="flex items-center">
+                    <span 
+                      className="w-3 h-3 rounded-full mr-1 inline-block border border-gray-300"
+                      style={{ 
+                        backgroundColor: 
+                          item.color.toLowerCase() === 'black' ? '#000' :
+                          item.color.toLowerCase() === 'white' ? '#fff' :
+                          item.color.toLowerCase() === 'grey' || item.color.toLowerCase() === 'gray' ? '#808080' :
+                          item.color.toLowerCase()
+                      }}
+                    />
+                    {item.color}
+                  </span>
+                )}
+                {item.size && item.size !== 'null' && <span>尺寸: {item.size}</span>}
+                {item.stock !== undefined && <span>庫存: {item.stock}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      } else if (item.child_category) {
+        // 這是一個子分類
+        return (
+          <div key={item.id} className="p-3 border-b last:border-b-0">
+            <div className="flex items-center">
+              <TagIcon className="h-4 w-4 text-gray-500 mr-2" />
+              <span>{item.child_category}</span>
+              {item.parent_category && (
+                <span className="text-xs text-gray-500 ml-2">
+                  (屬於 {item.parent_category})
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      } else if (item.email) {
+        // 這是一個使用者
+        return (
+          <div key={item.id} className="p-3 border-b last:border-b-0">
+            <div className="flex flex-col">
+              <span className="font-medium">{item.name}</span>
+              <span className="text-sm text-gray-500">{item.email}</span>
+            </div>
+          </div>
+        );
+      } else {
+        // 一般項目
+        return (
+          <div key={item.id} className="p-3 border-b last:border-b-0">
+            <span>{item.name || item.title || `項目 #${item.id}`}</span>
+          </div>
+        );
+      }
+    };
+
+    // 選擇要顯示的數據（根據表單類型）
+    const productsToDisplay = formData.type === 'coupon' ? formData.products : formData.applicable_products;
+    const categoriesToDisplay = formData.type === 'coupon' ? formData.categories : formData.applicable_categories;
+
+    // 按類型對項目進行分組
+    const groupedProducts = {};
+    
+    // 商品分組
+    if (productsToDisplay && productsToDisplay.length > 0) {
+      productsToDisplay.forEach(product => {
+        const productName = product.name;
+        if (!groupedProducts[productName]) {
+          groupedProducts[productName] = {
+            name: productName,
+            items: []
+          };
+        }
+        groupedProducts[productName].items.push(product);
+      });
+    }
+
+    return (
+      <div className={`fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center 
+        ${showApplicableModal ? "opacity-100" : "opacity-0 pointer-events-none"} 
+        transition-opacity duration-300`}
+      >
+        <div className="bg-white rounded-lg shadow-xl w-[90%] max-w-xl max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 className="text-lg font-semibold">適用範圍總覽</h3>
+            <button 
+              onClick={() => setShowApplicableModal(false)}
+              className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              <XIcon className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto divide-y">
+            {/* 適用分類 */}
+            {categoriesToDisplay && categoriesToDisplay.length > 0 && (
+              <div className="p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center">
+                  <FolderIcon className="h-4 w-4 mr-1" />
+                  適用分類 ({categoriesToDisplay.length})
+                </h4>
+                <div className="border rounded-md divide-y">
+                  {categoriesToDisplay.map(renderItem)}
+                </div>
+              </div>
+            )}
+            
+            {/* 適用商品 */}
+            {productsToDisplay && productsToDisplay.length > 0 && (
+              <div className="p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center">
+                  <ShoppingBagIcon className="h-4 w-4 mr-1" />
+                  適用商品 ({productsToDisplay.length})
+                </h4>
+                
+                {Object.keys(groupedProducts).length > 0 ? (
+                  <div className="space-y-4">
+                    {Object.values(groupedProducts).map((group, index) => (
+                      <div key={index} className="border rounded-md overflow-hidden">
+                        <div className="p-2 bg-gray-50 font-medium">
+                          {group.name} ({group.items.length} 個規格)
+                        </div>
+                        <div className="divide-y">
+                          {group.items.map(renderItem)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border rounded-md divide-y">
+                    {productsToDisplay.map(renderItem)}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* 適用使用者 */}
+            {formData.users && formData.users.length > 0 && (
+              <div className="p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center">
+                  <UsersIcon className="h-4 w-4 mr-1" />
+                  適用使用者 ({formData.users.length})
+                </h4>
+                <div className="border rounded-md divide-y">
+                  {formData.users.map(renderItem)}
+                </div>
+              </div>
+            )}
+            
+            {/* 沒有適用範圍 */}
+            {(!categoriesToDisplay || categoriesToDisplay.length === 0) && 
+             (!productsToDisplay || productsToDisplay.length === 0) && 
+             (!formData.users || formData.users.length === 0) && (
+              <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 text-gray-400">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                  <path d="M3 9h18"></path>
+                  <path d="M9 21V9"></path>
+                </svg>
+                <p className="mb-2">尚未設定任何適用範圍</p>
+                <p className="text-sm">請選擇適用的商品、分類或使用者</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-4 border-t">
+            <button
+              className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-md transition-colors"
+              onClick={() => setShowApplicableModal(false)}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 處理編輯模式的資料載入
+  useEffect(() => {
+    // 只有在編輯模式開啟且還未初始化時才執行
+    if (isOpen && mode === 'edit' && formData && !formInitialized.current) {
+      // 標記已初始化，避免重複執行
+      formInitialized.current = true;
+      
+      // 確保適用商品資料格式正確
+      let applicable_products = formData.applicable_products || [];
+      if (typeof applicable_products === 'string') {
+        try {
+          applicable_products = JSON.parse(applicable_products);
+        } catch (error) {
+          console.error('解析適用商品資料錯誤:', error);
+          applicable_products = [];
+        }
+      }
+      
+      // 確保適用分類資料格式正確
+      let applicable_categories = formData.applicable_categories || [];
+      if (typeof applicable_categories === 'string') {
+        try {
+          applicable_categories = JSON.parse(applicable_categories);
+        } catch (error) {
+          console.error('解析適用分類資料錯誤:', error);
+          applicable_categories = [];
+        }
+      }
+      
+      // 確保使用者資料格式正確
+      let users = formData.users || [];
+      if (typeof users === 'string') {
+        try {
+          users = JSON.parse(users);
+        } catch (error) {
+          console.error('解析使用者資料錯誤:', error);
+          users = [];
+        }
+      }
+      
+      // 更新表單資料，確保所有物件都有正確的格式
       setFormData(prev => ({
         ...prev,
-        [field]: value
+        applicable_products: applicable_products.map(item => ({
+          id: item.id || item.spec_id,
+          spec_id: item.spec_id,
+          product_id: item.product_id || item.id,
+          product_main_id: item.product_main_id,
+          name: item.name || item.product_name || '未命名商品',
+          sku: item.sku || '',
+          price: item.price || 0,
+          color: item.color || null,
+          size: item.size || null,
+          image: item.image || ''
+        })),
+        applicable_categories: applicable_categories.map(item => ({
+          id: item.id,
+          name: item.name || `${item.parent_category} - ${item.child_category}`,
+          parent_category: item.parent_category,
+          child_category: item.child_category
+        })),
+        users: users.map(user => ({
+          id: user.id,
+          name: user.name || '未命名用戶',
+          email: user.email || '',
+          phone: user.phone || '',
+          created_at: user.created_at || null
+        }))
       }));
-      
-      // 如果結束日期早於新的開始日期，自動調整結束日期
-      const startDate = new Date(value);
-      const endDate = formData.end_date ? new Date(formData.end_date) : null;
-      
-      if (endDate && startDate > endDate) {
-        // 結束日期設為和開始日期相同
-        setFormData(prev => ({
-          ...prev,
-          [field]: value,
-          end_date: value
-        }));
+    }
+    
+    // 當模態視窗關閉時重置初始化狀態
+    if (!isOpen) {
+      formInitialized.current = false;
+    }
+  }, [isOpen, mode]); // 移除 formData 依賴，避免循環
+
+  // 處理使用者選擇器確認
+  const handleUserSelectorConfirm = (selectedUsers) => {
+    // 確保所有使用者都有必要的屬性
+    const formattedUsers = selectedUsers.map(user => ({
+      id: user.id,
+      name: user.name || '未命名用戶',
+      email: user.email || '',
+      phone: user.phone || '',
+      created_at: user.created_at || null
+    }));
+    
+    // 更新表單資料
+    setFormData(prev => ({
+      ...prev,
+      users: formattedUsers
+    }));
+    
+    // 標記表單已修改
+    setIsDirty(true);
+    
+    // 記錄日誌
+    console.log('已選擇使用者:', formattedUsers);
+    
+    // 關閉使用者選擇器
+    setShowUserSelector(false);
+  };
+
+  // 優化適用範圍清單的處理
+  const renderApplicableProducts = useCallback(() => {
+    const products = formData.applicable_products || [];
+    if (!products.length) return <div className="text-gray-500 italic">尚未選擇適用商品</div>;
+    
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {products.map((product, index) => (
+          <div 
+            key={`product-${product.id}-${index}`}
+            className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1 text-sm"
+          >
+            <span className="truncate max-w-[200px]">
+              {product.name}
+              {product.color && product.size && ` (${product.color}/${product.size})`}
+              {product.color && !product.size && ` (${product.color})`}
+              {!product.color && product.size && ` (${product.size})`}
+            </span>
+            <button
+              type="button"
+              className="text-gray-500 hover:text-red-500"
+              onClick={() => {
+                const newProducts = formData.applicable_products.filter(p => 
+                  p.id !== product.id
+                );
+                setFormData(prev => ({
+                  ...prev,
+                  applicable_products: newProducts
+                }));
+                setIsDirty(true);
+              }}
+            >
+              <XIcon className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }, [formData.applicable_products]);
+  
+  // 優化適用分類清單的處理
+  const renderApplicableCategories = useCallback(() => {
+    const categories = formData.applicable_categories || [];
+    if (!categories.length) return <div className="text-gray-500 italic">尚未選擇適用分類</div>;
+    
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {categories.map((category, index) => (
+          <div 
+            key={`category-${category.id}-${index}`}
+            className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1 text-sm"
+          >
+            <span className="truncate max-w-[200px]">
+              {category.name || `${category.parent_category} - ${category.child_category}`}
+            </span>
+            <button
+              type="button"
+              className="text-gray-500 hover:text-red-500"
+              onClick={() => {
+                const newCategories = formData.applicable_categories.filter(c => 
+                  c.id !== category.id
+                );
+                setFormData(prev => ({
+                  ...prev,
+                  applicable_categories: newCategories
+                }));
+                setIsDirty(true);
+              }}
+            >
+              <XIcon className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }, [formData.applicable_categories]);
+  
+  // 優化指定會員清單的處理
+  const renderUsers = useCallback(() => {
+    const users = formData.users || [];
+    if (!users.length) return <div className="text-gray-500 italic">尚未選擇指定會員</div>;
+    
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {users.map((user, index) => (
+          <div 
+            key={`user-${user.id}-${index}`}
+            className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1 text-sm"
+          >
+            <span className="truncate max-w-[200px]">
+              {user.name} ({user.email})
+            </span>
+            <button
+              type="button"
+              className="text-gray-500 hover:text-red-500"
+              onClick={() => {
+                const newUsers = formData.users.filter(u => 
+                  u.id !== user.id
+                );
+                setFormData(prev => ({
+                  ...prev,
+                  users: newUsers
+                }));
+                setIsDirty(true);
+              }}
+            >
+              <XIcon className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }, [formData.users]);
+
+  // 監聽模態窗口打開和關閉
+  useEffect(() => {
+    if (isOpen) {
+      // 模態窗口打開時的初始化邏輯
+      if (mode === 'edit') {
+        // 在編輯模式下，設置日期範圍開關狀態
+        setIsDateRangeEnabled(Boolean(formData.start_date || formData.end_date));
+      } else {
+        // 在新增模式下重置表單狀態
+        setIsDirty(false);
         
-        // 顯示提示訊息
-        toast.info('已自動調整結束日期與開始日期一致');
+        // 如果是活動類型，默認設置日期範圍
+        if (type === 'campaigns') {
+          // 活動默認必須有日期範圍
+          setIsDateRangeEnabled(true);
+        } else {
+          // 優惠券可以選擇是否有日期範圍
+          setIsDateRangeEnabled(false);
+        }
       }
     } else {
-      // 更新表單數據
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      // 模態窗口關閉時的清理邏輯
+      setFormErrors({});
+      setIsDirty(false);
+      formInitialized.current = false;
     }
-    
-    // 標記表單已變更
-    setHasChanges(true);
-    
-    // 清除特定欄位的錯誤（如果有）
-    if (formErrors[field]) {
-      const newErrors = { ...formErrors };
-      delete newErrors[field];
-      setFormErrors(newErrors);
-    }
-  };
+  }, [isOpen, mode, type]);
 
   if (!isOpen) return null;
 
@@ -774,9 +1588,13 @@ const MarketingModal = ({
             ref={modalRef}
             className={cn(
               "bg-white rounded-lg shadow-xl w-[90%] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col transition-all ease-out duration-300 animate-in fade-in-0 zoom-in-95 will-change-transform will-change-opacity",
-              "border border-border"
+              "border border-border relative"
             )}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              // 阻止事件冒泡，防止點擊模態窗內部時觸發外層的關閉
+              e.nativeEvent.stopImmediatePropagation();
+            }}
           >
             {/* 標題區域 */}
             <div className="flex items-center justify-between p-4 border-b">
@@ -991,30 +1809,22 @@ const MarketingModal = ({
                     )}
 
                     {/* 適用範圍選擇 */}
-                    <div className="space-y-2">
-                      <Label>適用範圍</Label>
-                      <div className="flex gap-4">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>適用範圍</Label>
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            setSelectorType('products');
+                            setSelectedSelectorItems(formData.applicable_products || []);
+                            setSelectorType('applicable_products');
                             setShowSelector(true);
                           }}
                         >
-                          選擇商品 ({formData.products?.length || 0})
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectorType('categories');
-                            setShowSelector(true);
-                          }}
-                        >
-                          選擇分類 ({formData.categories?.length || 0})
+                          選擇商品
                         </Button>
                       </div>
+                      {renderApplicableProducts()}
                     </div>
 
                     {/* 使用條件 */}
@@ -1040,17 +1850,20 @@ const MarketingModal = ({
                     </div>
 
                     {/* 在優惠券表單中添加會員選擇 */}
-                    <div className="space-y-2">
-                      <Label>指定會員</Label>
-                      <div className="flex gap-4">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>指定會員</Label>
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setShowUserSelector(true)}
+                          onClick={() => {
+                            setShowUserSelector(true);
+                          }}
                         >
-                          選擇會員 ({formData.users?.length || 0})
+                          選擇會員
                         </Button>
                       </div>
+                      {renderUsers()}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -1359,30 +2172,58 @@ const MarketingModal = ({
                     )}
 
                     {/* 適用商品選擇 */}
-                    <div className="space-y-2">
-                      <Label>適用商品</Label>
-                      <div className="flex gap-4">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>適用商品</Label>
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            setSelectorType('products');
+                            setSelectedSelectorItems(formData.applicable_products || []);
+                            setSelectorType('applicable_products');
                             setShowSelector(true);
                           }}
                         >
-                          選擇商品 ({formData.applicable_products?.length || 0})
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectorType('categories');
-                            setShowSelector(true);
-                          }}
-                        >
-                          選擇分類 ({formData.applicable_categories?.length || 0})
+                          選擇商品
                         </Button>
                       </div>
+                      {renderApplicableProducts()}
+                    </div>
+
+                    {/* 適用分類選擇 */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>適用分類</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedSelectorItems(formData.applicable_categories || []);
+                            setSelectorType('applicable_categories');
+                            setShowSelector(true);
+                          }}
+                        >
+                          選擇分類
+                        </Button>
+                      </div>
+                      {renderApplicableCategories()}
+                    </div>
+
+                    {/* 指定會員選擇 */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>指定會員</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setShowUserSelector(true);
+                          }}
+                        >
+                          選擇會員
+                        </Button>
+                      </div>
+                      {renderUsers()}
                     </div>
 
                     {/* 活動限制 */}
@@ -1537,7 +2378,7 @@ const MarketingModal = ({
             <ProductCategorySelector
               isOpen={showSelector}
               onClose={() => setShowSelector(false)}
-              selectedItems={selectorType === 'products' ? formData.products : formData.categories}
+              selectedItems={selectedSelectorItems}
               onConfirm={handleSelectorConfirm}
               type={selectorType}
             />
@@ -1547,9 +2388,7 @@ const MarketingModal = ({
               isOpen={showUserSelector}
               onClose={() => setShowUserSelector(false)}
               selectedUsers={formData.users || []}
-              onConfirm={(selectedUsers) => {
-                setFormData({...formData, users: selectedUsers});
-              }}
+              onConfirm={handleUserSelectorConfirm}
             />
           </div>
         </div>
@@ -1585,6 +2424,9 @@ const MarketingModal = ({
           </div>
         </div>
       )}
+
+      {/* 適用產品概覽視窗 */}
+      {renderApplicableModal()}
     </>
   );
 };

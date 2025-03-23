@@ -19,7 +19,8 @@ import {
   CopyIcon, 
   CheckIcon, 
   InfoIcon,
-  FileTextIcon as DocumentIcon
+  FileTextIcon as DocumentIcon,
+  MailIcon
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -299,7 +300,7 @@ const Marketing = () => {
       
       // 重新聚焦到適用範圍視窗，提高 Z-index
       setTimeout(() => {
-        document.querySelector('.sm\\:max-w-\\[500px\\]')?.focus();
+        document.querySelector('.sm\\:max-w-\\[600px\\]')?.focus();
       }, 50);
     }, 70);
     
@@ -310,12 +311,19 @@ const Marketing = () => {
       console.log('適用範圍詳細資訊 detailItem:', detailItem);
       
       // 檢查對應的適用範圍屬性是否是陣列
-      const checkItems = type === 'products' ? detailItem.products :
-                         type === 'categories' ? detailItem.categories :
-                         type === 'users' ? detailItem.users :
-                         type === 'applicable_products' ? detailItem.applicable_products : null;
+      const checkItems = 
+        type === 'products' ? detailItem.products :
+        type === 'categories' ? detailItem.categories :
+        type === 'users' ? detailItem.users :
+        type === 'applicable_products' ? detailItem.applicable_products :
+        type === 'applicable_categories' ? detailItem.applicable_categories : null;
                          
       console.log(`檢查 ${type} 屬性:`, checkItems, Array.isArray(checkItems) ? '是陣列' : '不是陣列');
+      
+      // 確保相關屬性是陣列
+      if (checkItems === null || !Array.isArray(checkItems)) {
+        console.warn(`${type} 屬性不是陣列或不存在，將使用空陣列`);
+      }
     }
   };
   
@@ -338,106 +346,361 @@ const Marketing = () => {
     } else if (applicableType === "applicable_products") {
       title = "適用商品列表";
       items = Array.isArray(detailItem.applicable_products) ? detailItem.applicable_products : [];
+    } else if (applicableType === "applicable_categories") {
+      title = "適用分類列表";
+      items = Array.isArray(detailItem.applicable_categories) ? detailItem.applicable_categories : [];
+    }
+    
+    // 驗證數據類型
+    if (items.length > 0) {
+      console.log('首項類型檢查:', items[0]);
+      // 確認項目類型，避免錯誤的資料類型顯示
+      if (applicableType === "users" && items[0].email === undefined) {
+        console.warn('檢測到會員列表中的項目不是會員資料，重置為空陣列');
+        items = [];
+      } else if ((applicableType === "products" || applicableType === "applicable_products") && items[0].name === undefined) {
+        console.warn('檢測到商品列表中的項目不是商品資料，重置為空陣列');
+        items = [];
+      }
     }
     
     // 除錯訊息
     console.log('適用範圍類型:', applicableType);
     console.log('項目數量:', items.length);
-    console.log('項目類型:', typeof items);
+    console.log('項目數據:', items);
+    
+    // 根據不同類型渲染不同的內容
+    const renderContent = () => {
+      // 商品列表
+      if (applicableType === "products" || applicableType === "applicable_products") {
+        // 依據主商品 ID 分組規格
+        const groupedProducts = {};
+        
+        items.forEach(item => {
+          // 如果有 product_main_id, 那麼這是規格
+          if (item.product_main_id) {
+            if (!groupedProducts[item.product_main_id]) {
+              groupedProducts[item.product_main_id] = {
+                mainProduct: null,
+                variants: []
+              };
+            }
+            groupedProducts[item.product_main_id].variants.push(item);
+          } 
+          // 否則，這是主商品或尚未分類的商品
+          else if (item.id) {
+            // 如果這個 ID 已經存在在分組中，那麼這是主商品
+            if (groupedProducts[item.id]) {
+              groupedProducts[item.id].mainProduct = item;
+            } else {
+              // 如果不存在，創建新的分組
+              groupedProducts[item.id] = {
+                mainProduct: item,
+                variants: []
+              };
+            }
+          }
+        });
+        
+        // 如果無法分組（舊數據可能沒有 product_main_id），則直接顯示原始列表
+        const isGroupable = Object.keys(groupedProducts).length > 0;
+        
+        if (!isGroupable) {
+          return (
+            <div className="max-h-[60vh] overflow-y-auto p-1">
+              {items.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {items.map((item, index) => (
+                    <div key={item.id || `item-${index}`} className="flex items-center p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all bg-white overflow-hidden">
+                      {item.image ? (
+                        <div className="w-16 h-16 rounded-md overflow-hidden border border-gray-200 mr-3 flex-shrink-0">
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-md overflow-hidden flex items-center justify-center bg-gray-100 mr-3 flex-shrink-0">
+                          <PackageIcon className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 truncate mb-1">{item.name || "未命名商品"}</h4>
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          {item.sku && (
+                            <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs whitespace-nowrap">
+                              SKU: {item.sku}
+                            </span>
+                          )}
+                          {item.stock !== undefined && (
+                            <span className="px-2 py-0.5 bg-blue-50 rounded-full text-blue-700 text-xs whitespace-nowrap">
+                              庫存: {item.stock}
+                            </span>
+                          )}
+                          {(item.color || item.size) && (
+                            <span className="px-2 py-0.5 bg-purple-50 rounded-full text-purple-700 text-xs whitespace-nowrap">
+                              {item.color && item.color !== 'null' ? item.color : ''}
+                              {item.color && item.size && item.color !== 'null' && item.size !== 'null' ? '/' : ''}
+                              {item.size && item.size !== 'null' ? item.size : ''}
+                            </span>
+                          )}
+                        </div>
+                        {item.price && (
+                          <div className="mt-1.5">
+                            <span className="font-medium text-sm text-brandBlue-dark">
+                              NT$ {item.price}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  <p>無適用商品</p>
+                </div>
+              )}
+            </div>
+          );
+        }
+        
+        // 分組顯示商品和規格
+        return (
+          <div className="max-h-[60vh] overflow-y-auto p-1">
+            {Object.keys(groupedProducts).length > 0 ? (
+              <div className="space-y-4">
+                {Object.values(groupedProducts).map((group, groupIndex) => {
+                  const mainProduct = group.mainProduct || (group.variants.length > 0 ? group.variants[0] : null);
+                  if (!mainProduct) return null;
+                  
+                  return (
+                    <div key={`group-${groupIndex}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                      {/* 主商品資訊 */}
+                      <div className="flex items-start p-4 border-b border-gray-100">
+                        {mainProduct.image ? (
+                          <div className="w-20 h-20 rounded-md overflow-hidden border border-gray-200 mr-4 flex-shrink-0">
+                            <img 
+                              src={mainProduct.image} 
+                              alt={mainProduct.name} 
+                              className="w-full h-full object-cover" 
+                              onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-20 h-20 rounded-md overflow-hidden flex items-center justify-center bg-gray-100 mr-4 flex-shrink-0">
+                            <PackageIcon className="h-10 w-10 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                            {mainProduct.name || "未命名商品"}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-2 text-sm mb-2">
+                            {mainProduct.product_id && (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs whitespace-nowrap">
+                                ID: {mainProduct.product_id || mainProduct.id}
+                              </span>
+                            )}
+                            {mainProduct.stock !== undefined && (
+                              <span className="px-2 py-0.5 bg-blue-50 rounded-full text-blue-700 text-xs whitespace-nowrap">
+                                總庫存: {mainProduct.stock}
+                              </span>
+                            )}
+                            {mainProduct.category_name && (
+                              <span className="px-2 py-0.5 bg-green-50 rounded-full text-green-700 text-xs whitespace-nowrap">
+                                分類: {mainProduct.category_name}
+                              </span>
+                            )}
+                          </div>
+                          {mainProduct.price && (
+                            <div className="mt-1">
+                              <span className="font-medium text-brandBlue-dark">
+                                NT$ {mainProduct.price}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* 規格列表 */}
+                      {group.variants.length > 0 && (
+                        <div className="p-3 bg-gray-50">
+                          <p className="text-sm font-medium text-gray-500 mb-2">已選擇的規格 ({group.variants.length})</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {group.variants.map((variant, vIndex) => (
+                              <div key={`variant-${vIndex}`} className="flex items-center p-2 bg-white rounded-md border border-gray-200">
+                                {variant.image ? (
+                                  <div className="w-10 h-10 rounded-md overflow-hidden border border-gray-200 mr-2 flex-shrink-0">
+                                    <img 
+                                      src={variant.image} 
+                                      alt="" 
+                                      className="w-full h-full object-cover" 
+                                      onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=無圖片" }}
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md flex items-center justify-center bg-gray-100 mr-2 flex-shrink-0">
+                                    <PackageIcon className="h-5 w-5 text-gray-400" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {variant.sku && (
+                                      <span className="px-1.5 py-0.5 bg-gray-100 rounded-full text-gray-600 text-xs">
+                                        SKU: {variant.sku}
+                                      </span>
+                                    )}
+                                    {variant.stock !== undefined && (
+                                      <span className="px-1.5 py-0.5 bg-blue-50 rounded-full text-blue-700 text-xs">
+                                        庫存: {variant.stock}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    {(variant.color || variant.size) && (
+                                      <span className="text-xs text-gray-700">
+                                        {variant.color && variant.color !== 'null' ? variant.color : ''}
+                                        {variant.color && variant.size && variant.color !== 'null' && variant.size !== 'null' ? ' / ' : ''}
+                                        {variant.size && variant.size !== 'null' ? variant.size : ''}
+                                      </span>
+                                    )}
+                                    {variant.price && (
+                                      <span className="text-xs font-medium text-brandBlue-dark">
+                                        NT$ {variant.price}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-500">
+                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                <p>無適用商品</p>
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // 分類列表
+      else if (applicableType === "categories" || applicableType === "applicable_categories") {
+        return (
+          <div className="max-h-[60vh] overflow-y-auto p-1">
+            {items.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {items.map((item, index) => {
+                  const categoryName = item.name || 
+                    (item.parent_category && item.child_category 
+                      ? `${item.parent_category} - ${item.child_category}` 
+                      : "未知分類");
+                  
+                  return (
+                    <div key={item.id || `item-${index}`} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all bg-white">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mr-3 flex-shrink-0">
+                          <TagIcon className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-gray-800 block truncate">{categoryName}</span>
+                          {(item.parent_id || item.parent_category) && (
+                            <span className="text-xs text-gray-500 block truncate mt-0.5">
+                              {item.parent_category || `分類 ID: ${item.parent_id}`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-500">
+                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                <p>無適用分類</p>
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // 會員列表
+      else if (applicableType === "users") {
+        return (
+          <div className="max-h-[60vh] overflow-y-auto p-1">
+            {items.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {items.map((item, index) => (
+                  <div key={item.id || `item-${index}`} className="flex items-center border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all bg-white">
+                    <div className="w-12 h-12 rounded-full bg-brandBlue-ultraLight text-brandBlue-normal font-bold flex items-center justify-center mr-3 flex-shrink-0">
+                      {item.name ? item.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 truncate">{item.name || "未命名會員"}</h4>
+                      {item.email && (
+                        <div className="text-sm text-gray-500 flex items-center mt-1 truncate">
+                          <MailIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">{item.email}</span>
+                        </div>
+                      )}
+                    </div>
+                    {item.created_at && (
+                      <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-full whitespace-nowrap">
+                        <span>
+                          {new Date(item.created_at).toLocaleDateString('zh-TW', { 
+                            year: 'numeric', 
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-500">
+                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                <p>無適用會員</p>
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // 移除預設的表格顯示方式，使用上述的卡片式佈局
+      return (
+        <div className="py-8 text-center text-gray-500">
+          <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+          <p>未知的適用範圍類型</p>
+        </div>
+      );
+    };
     
     return (
       <Dialog open={showApplicableModal} onOpenChange={setShowApplicableModal}>
-        <DialogContent className="sm:max-w-[500px] transition-all duration-300 ease-out fade-in will-change-transform will-change-opacity">
+        <DialogContent className="sm:max-w-[600px] transition-all duration-300 ease-out fade-in will-change-transform will-change-opacity">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>{title}</DialogTitle>
             </div>
           </DialogHeader>
           <div className="py-4">
-            {items.length > 0 ? (
-              <div className="max-h-[60vh] overflow-y-auto">
-                <table className="w-full border-collapse">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {applicableType === "products" || applicableType === "applicable_products" ? "商品名稱" : 
-                         applicableType === "categories" ? "分類名稱" : "會員名稱"}
-                      </th>
-                      {(applicableType === "products" || applicableType === "applicable_products") && (
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          價格
-                        </th>
-                      )}
-                      {applicableType === "users" && (
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          電子郵件
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {items.map((item, index) => (
-                      <tr key={item.id || `item-${index}`} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <div className="font-medium text-gray-700">
-                            {applicableType === "products" && (
-                              <Button
-                                variant="link"
-                                className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                                onClick={(e) => handleShowApplicable('products', e)}
-                              >
-                                適用產品: {item.applicable_products?.length || 0} 項
-                              </Button>
-                            )}
-                            {applicableType === "categories" && (
-                              <Button
-                                variant="link"
-                                className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                                onClick={(e) => {
-                                  e.stopPropagation(); // 確保不觸發行點擊事件
-                                  handleShowApplicable('categories', e);
-                                }}
-                              >
-                                適用類別: {item.applicable_categories?.length || 0} 項
-                              </Button>
-                            )}
-                            {applicableType === "users" && (
-                              <Button
-                                variant="link"
-                                className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                                onClick={(e) => {
-                                  e.stopPropagation(); // 確保不觸發行點擊事件
-                                  handleShowApplicable('users', e);
-                                }}
-                              >
-                                適用會員: {item.applicable_users?.length || 0} 人
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                        {(applicableType === "products" || applicableType === "applicable_products") && (
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                            NT$ {item.price || 0}
-                          </td>
-                        )}
-                        {applicableType === "users" && (
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                            {item.email || "無電子郵件"}
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-gray-500">
-                <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                <p>無適用項目</p>
-              </div>
-            )}
+            {renderContent()}
           </div>
         </DialogContent>
       </Dialog>
@@ -564,7 +827,7 @@ const Marketing = () => {
                     <h4 className="text-sm font-medium text-gray-500">適用範圍</h4>
                     <div className="flex flex-wrap gap-2">
                       {detailItem.products?.length > 0 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 mr-1 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
                           e.stopPropagation(); 
                           // 設置當前優惠券作為詳細項目
                           setDetailItem(detailItem);
@@ -582,7 +845,7 @@ const Marketing = () => {
                           // 設置當前優惠券作為詳細項目
                           setDetailItem(detailItem);
                           // 確保 detailItem 已正確設置
-                          console.log("點擊了優惠券類別適用範圍按鈕", detailItem);
+                          console.log("點擊了優惠券分類適用範圍按鈕", detailItem);
                           handleShowApplicable("categories", e);
                         }}>
                           <TagIcon className="h-3 w-3 mr-1" />
@@ -657,22 +920,38 @@ const Marketing = () => {
                     <p className="text-base p-2 bg-gray-50 rounded">{detailItem.description}</p>
                   </div>
                 )}
-                {detailItem.applicable_products?.length > 0 && (
+                {(detailItem.applicable_products?.length > 0 || detailItem.applicable_categories?.length > 0) && (
                   <div className="space-y-1 col-span-2">
-                    <h4 className="text-sm font-medium text-gray-500">適用商品</h4>
+                    <h4 className="text-sm font-medium text-gray-500">適用範圍</h4>
                     <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
-                        e.stopPropagation(); 
-                        // 設置當前活動作為詳細項目
-                        setDetailItem(detailItem);
-                        // 確保 detailItem 已正確設置
-                        console.log("點擊了促銷活動適用商品按鈕", detailItem);
-                        // 延遲顯示適用範圍模態窗口
-                        handleShowApplicable("applicable_products", e);
-                      }}>
-                        <PackageIcon className="h-3 w-3 mr-1" />
-                        {detailItem.applicable_products.length} 件商品
-                      </span>
+                      {detailItem.applicable_products?.length > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
+                          e.stopPropagation(); 
+                          // 設置當前活動作為詳細項目
+                          setDetailItem(detailItem);
+                          // 確保 detailItem 已正確設置
+                          console.log("點擊了促銷活動適用商品按鈕", detailItem);
+                          // 延遲顯示適用範圍模態窗口
+                          handleShowApplicable("applicable_products", e);
+                        }}>
+                          <PackageIcon className="h-3 w-3 mr-1" />
+                          {detailItem.applicable_products.length} 件商品
+                        </span>
+                      )}
+                      {detailItem.applicable_categories?.length > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
+                          e.stopPropagation(); 
+                          // 設置當前活動作為詳細項目
+                          setDetailItem(detailItem);
+                          // 確保 detailItem 已正確設置
+                          console.log("點擊了促銷活動適用分類按鈕", detailItem);
+                          // 延遲顯示適用範圍模態窗口
+                          handleShowApplicable("applicable_categories", e);
+                        }}>
+                          <TagIcon className="h-3 w-3 mr-1" />
+                          {detailItem.applicable_categories.length} 個分類
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -814,9 +1093,9 @@ const Marketing = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             {coupon.products?.length > 0 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 mr-1 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
                                 e.stopPropagation(); 
                                 // 設置當前優惠券作為詳細項目
                                 setDetailItem(coupon);
@@ -826,6 +1105,19 @@ const Marketing = () => {
                               }}>
                                 <PackageIcon className="h-3 w-3 mr-1" />
                                 {coupon.products.length} 件商品
+                              </span>
+                            )}
+                            {coupon.categories?.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
+                                e.stopPropagation(); 
+                                // 設置當前優惠券作為詳細項目
+                                setDetailItem(coupon);
+                                // 確保 detailItem 已正確設置
+                                console.log("點擊了優惠券分類適用範圍按鈕", coupon);
+                                handleShowApplicable("categories", e);
+                              }}>
+                                <TagIcon className="h-3 w-3 mr-1" />
+                                {coupon.categories.length} 個分類
                               </span>
                             )}
                             {coupon.users?.length > 0 && (
@@ -915,20 +1207,36 @@ const Marketing = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {campaign.applicable_products?.length > 0 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
-                              e.stopPropagation(); 
-                              // 設置當前活動作為詳細項目
-                              setDetailItem(campaign);
-                              // 確保 detailItem 已正確設置
-                              console.log("點擊了促銷活動適用商品按鈕", campaign);
-                              // 延遲顯示適用範圍模態窗口
-                              handleShowApplicable("applicable_products", e);
-                            }}>
-                              <PackageIcon className="h-3 w-3 mr-1" />
-                              {campaign.applicable_products.length} 件商品
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1">
+                            {campaign.applicable_products?.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
+                                e.stopPropagation(); 
+                                // 設置當前活動作為詳細項目
+                                setDetailItem(campaign);
+                                // 確保 detailItem 已正確設置
+                                console.log("點擊了促銷活動適用商品按鈕", campaign);
+                                // 延遲顯示適用範圍模態窗口
+                                handleShowApplicable("applicable_products", e);
+                              }}>
+                                <PackageIcon className="h-3 w-3 mr-1" />
+                                {campaign.applicable_products.length} 件商品
+                              </span>
+                            )}
+                            {campaign.applicable_categories?.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
+                                e.stopPropagation(); 
+                                // 設置當前活動作為詳細項目
+                                setDetailItem(campaign);
+                                // 確保 detailItem 已正確設置
+                                console.log("點擊了促銷活動適用分類按鈕", campaign);
+                                // 延遲顯示適用範圍模態窗口
+                                handleShowApplicable("applicable_categories", e);
+                              }}>
+                                <TagIcon className="h-3 w-3 mr-1" />
+                                {campaign.applicable_categories.length} 個分類
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={campaign.calculated_status} />
