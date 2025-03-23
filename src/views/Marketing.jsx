@@ -20,7 +20,9 @@ import {
   CheckIcon, 
   InfoIcon,
   FileTextIcon as DocumentIcon,
-  MailIcon
+  MailIcon,
+  PhoneIcon,
+  CakeIcon
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -363,6 +365,101 @@ const Marketing = () => {
     console.log('適用範圍類型:', applicableType);
     console.log('項目數量:', items.length);
     console.log('項目數據:', items);
+    
+    // 依據會員顯示
+    if (applicableType === "users") {
+      return (
+        <Dialog open={showApplicableModal} onOpenChange={setShowApplicableModal}>
+          <DialogContent className="sm:max-w-[600px] transition-all duration-300 ease-out will-change-transform will-change-opacity">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="flex items-center">
+                  <Users2Icon className="h-5 w-5 text-purple-500 mr-2" />
+                  {title} ({items.length})
+                </DialogTitle>
+              </div>
+            </DialogHeader>
+            
+            <div className="max-h-[60vh] overflow-y-auto p-1">
+              {items.length > 0 ? (
+                <div className="space-y-3">
+                  {items.map((user, index) => {
+                    // 格式化生日顯示
+                    const formatBirthday = (dateString) => {
+                      if (!dateString) return null;
+                      
+                      try {
+                        const date = new Date(dateString);
+                        if (isNaN(date.getTime())) return null;
+                        
+                        const month = date.getMonth() + 1;
+                        const day = date.getDate();
+                        
+                        return `${month}月${day}日`;
+                      } catch (error) {
+                        console.error("Error formatting birthday:", error);
+                        return null;
+                      }
+                    };
+                    
+                    const birthday = formatBirthday(user.birthday);
+                    
+                    return (
+                      <div 
+                        key={user.id || `user-${index}`} 
+                        className="border border-gray-200 hover:border-gray-300 rounded-lg p-4 bg-white shadow-sm hover:shadow transition-all"
+                      >
+                        <div className="flex justify-between items-start">
+                          {/* 左側用戶基本資訊 */}
+                          <div className="flex flex-col">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="font-medium text-gray-900">{user.name || '未命名會員'}</span>
+                              <span className="text-xs text-gray-500">#{user.id}</span>
+                            </div>
+                            
+                            <div className="flex flex-col space-y-1.5 text-sm">
+                              <div className="flex items-center text-gray-600">
+                                <MailIcon className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                <span>{user.email || '無郵箱'}</span>
+                              </div>
+                              
+                              {user.phone && (
+                                <div className="flex items-center text-gray-600">
+                                  <PhoneIcon className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                  <span>{user.phone}</span>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center text-gray-600">
+                                <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                <span>{new Date(user.created_at).toLocaleDateString('zh-TW')} 註冊</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* 右側生日資訊 */}
+                          {birthday && (
+                            <div className="bg-pink-50 text-pink-600 font-medium text-xs rounded-full px-3 py-1 flex items-center">
+                              <CakeIcon className="h-3 w-3 mr-1" />
+                              生日: {birthday}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <InfoIcon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  <p>無適用會員</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
     
     // 依據主商品 ID 分組規格
     const groupedProducts = {};
