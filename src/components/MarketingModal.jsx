@@ -821,6 +821,20 @@ const MarketingModal = ({
       submitData.end_date = endDate.toISOString().split('T')[0];
     }
 
+    // 確保數值欄位被轉換為數值類型
+    if (submitData.discount_value !== undefined && submitData.discount_value !== null && submitData.discount_value !== '') {
+      // 確保保留原始精確值，不要使用Number轉換
+      submitData.discount_value = submitData.discount_value.toString();
+    }
+    
+    // 確保其他數值欄位也被轉換為數值類型
+    const numericFields = ['min_purchase_amount', 'usage_limit', 'buy_quantity', 'free_quantity', 'bundle_quantity', 'bundle_discount', 'flash_sale_discount'];
+    numericFields.forEach(field => {
+      if (submitData[field] !== undefined && submitData[field] !== null && submitData[field] !== '') {
+        submitData[field] = Number(submitData[field]);
+      }
+    });
+
     // 如果已過期，強制設置狀態為 disabled
     if (isExpired(submitData.end_date)) {
       submitData.status = 'disabled';
@@ -992,7 +1006,12 @@ const MarketingModal = ({
                 max={formData.discount_type === 'percentage' ? '100' : undefined}
                 className={inputClasses}
                 value={formData.discount_value || ''}
-                onChange={(e) => handleFormChange('discount_value', e.target.value)}
+                onChange={(e) => {
+                  // 保持精確的數值
+                  const value = e.target.value === '' ? '' : e.target.value;
+                  handleFormChange('discount_value', value);
+                }}
+                step="any"
               />
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                 {formData.discount_type === 'fixed' ? 'NT$' : '%'}
@@ -1844,12 +1863,18 @@ const MarketingModal = ({
                         <Label htmlFor="discount_value">
                           折扣值{formData.discount_type === 'percentage' ? ' (%)' : ' (NT$)'}
                         </Label>
-                        <Input
-                          id="discount_value"
+                        <input
                           type="number"
+                          min="0"
+                          id="discount_value"
+                          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
                           value={formData.discount_value || ""}
-                          onChange={(e) => setFormData({...formData, discount_value: e.target.value})}
-                          required
+                          onChange={(e) => {
+                            // 保持精確的數值
+                            const value = e.target.value === '' ? '' : e.target.value;
+                            setFormData({...formData, discount_value: value});
+                          }}
+                          step="any"
                         />
                       </div>
                     )}
@@ -2129,12 +2154,18 @@ const MarketingModal = ({
                           <Label htmlFor="discount_value">
                             折扣值{formData.discount_method === 'percentage' ? ' (%)' : ' (NT$)'}
                           </Label>
-                          <Input
-                            id="discount_value"
+                          <input
                             type="number"
+                            min="0"
+                            id="discount_value"
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
                             value={formData.discount_value || ""}
-                            onChange={(e) => setFormData({...formData, discount_value: e.target.value})}
-                            required
+                            onChange={(e) => {
+                              // 保持精確的數值
+                              const value = e.target.value === '' ? '' : e.target.value;
+                              setFormData({...formData, discount_value: value});
+                            }}
+                            step="any"
                           />
                         </div>
                       </div>
