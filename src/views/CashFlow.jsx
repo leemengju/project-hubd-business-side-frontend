@@ -25,7 +25,8 @@ import {
   FilterIcon,
   ChevronRightIcon,
   Loader2Icon,
-  Settings2Icon
+  Settings2Icon,
+  ClockIcon
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -49,8 +50,10 @@ const CashFlow = () => {
   const [dayTransactions, setDayTransactions] = useState([]);
   const [dailyData, setDailyData] = useState(null);
   const [stats, setStats] = useState({
-    totalIncome: 0,
-    totalOutcome: 0,
+    totalSales: 0,
+    transactionCount: 0,
+    totalFees: 0,
+    netIncome: 0,
     pendingReconciliation: 0,
     completedReconciliation: 0
   });
@@ -122,12 +125,14 @@ const CashFlow = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await apiService.get("/transactions/stats");
-      setStats(response.data || {
-        totalIncome: 0,
-        totalOutcome: 0,
-        pendingReconciliation: 0,
-        completedReconciliation: 0
+      const response = await apiService.get("/payments/dashboard");
+      setStats({
+        totalSales: response.data.stats.total_sales || 0,
+        transactionCount: response.data.stats.transaction_count || 0,
+        totalFees: response.data.stats.total_fees || 0,
+        netIncome: response.data.stats.net_income || 0,
+        pendingReconciliation: response.data.stats.pending_reconciliation || 0,
+        completedReconciliation: response.data.stats.completed_reconciliation || 0
       });
     } catch (error) {
       console.error("獲取金流統計失敗:", error);
@@ -551,59 +556,85 @@ const CashFlow = () => {
   // 渲染金流統計卡片
   const renderStatsCards = () => {
     return (
-      <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500">總收入</p>
-                <h3 className="text-2xl font-bold text-green-600">{formatAmount(stats.totalIncome)}</h3>
-              </div>
-              <div className="bg-green-100 p-2 rounded-full">
-                <ArrowDownIcon className="h-6 w-6 text-green-600" />
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* 總交易金額 */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">總交易金額</p>
+              <h3 className="text-2xl font-bold mt-1">{formatAmount(stats.totalSales)}</h3>
             </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500">總支出</p>
-                <h3 className="text-2xl font-bold text-red-600">{formatAmount(stats.totalOutcome)}</h3>
-              </div>
-              <div className="bg-red-100 p-2 rounded-full">
-                <ArrowUpIcon className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500">待對帳交易天數</p>
-                <h3 className="text-2xl font-bold text-yellow-600">{stats.pendingReconciliation}</h3>
-              </div>
-              <div className="bg-yellow-100 p-2 rounded-full">
-                <RefreshCwIcon className="h-6 w-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500">已對帳交易天數</p>
-                <h3 className="text-2xl font-bold text-blue-600">{stats.completedReconciliation}</h3>
-              </div>
-              <div className="bg-blue-100 p-2 rounded-full">
-                <CheckCircleIcon className="h-6 w-6 text-blue-600" />
-              </div>
+            <div className="bg-blue-100 p-3 rounded-full">
+              <CoinsIcon className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
-        
-        {/* 添加交易趨勢圖表 */}
-        <div className="mb-6">
-          <CashFlowChart dateRange={dateRange} />
+
+        {/* 交易筆數 */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">交易筆數</p>
+              <h3 className="text-2xl font-bold mt-1">{stats.transactionCount}</h3>
+            </div>
+            <div className="bg-green-100 p-3 rounded-full">
+              <FileTextIcon className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
         </div>
-      </>
+
+        {/* 手續費 */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">手續費</p>
+              <h3 className="text-2xl font-bold mt-1">{formatAmount(stats.totalFees)}</h3>
+            </div>
+            <div className="bg-yellow-100 p-3 rounded-full">
+              <ReceiptIcon className="h-6 w-6 text-yellow-600" />
+            </div>
+          </div>
+        </div>
+
+        {/* 淨收入 */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">淨收入</p>
+              <h3 className="text-2xl font-bold mt-1">{formatAmount(stats.netIncome)}</h3>
+            </div>
+            <div className="bg-purple-100 p-3 rounded-full">
+              <ArrowUpIcon className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        {/* 待對帳筆數 */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">待對帳筆數</p>
+              <h3 className="text-2xl font-bold mt-1">{stats.pendingReconciliation}</h3>
+            </div>
+            <div className="bg-orange-100 p-3 rounded-full">
+              <ClockIcon className="h-6 w-6 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
+        {/* 已對帳筆數 */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">已對帳筆數</p>
+              <h3 className="text-2xl font-bold mt-1">{stats.completedReconciliation}</h3>
+            </div>
+            <div className="bg-teal-100 p-3 rounded-full">
+              <CheckCircleIcon className="h-6 w-6 text-teal-600" />
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
