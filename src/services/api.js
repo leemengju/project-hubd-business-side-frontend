@@ -3,7 +3,7 @@ import axios from "axios";
 const API_URL = "http://localhost:8000/api"; // Laravel 本地端網址
 
 // 建立 Axios 實例
-const api = axios.create({
+const apiService = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
@@ -16,10 +16,10 @@ const api = axios.create({
 });
 
 // 請求攔截器
-api.interceptors.request.use(
+apiService.interceptors.request.use(
   (config) => {
     // 從本地儲存獲取 token
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,7 +31,7 @@ api.interceptors.request.use(
 );
 
 // 響應攔截器
-api.interceptors.response.use(
+apiService.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -43,7 +43,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         // 這裡可以實作 token 刷新邏輯
-        // const refreshResponse = await api.post("/auth/refresh");
+        // const refreshResponse = await apiService.post("/auth/refresh");
         // localStorage.setItem("token", refreshResponse.data.token);
         // originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.token}`;
         // return axios(originalRequest);
@@ -78,11 +78,11 @@ api.interceptors.response.use(
 );
 
 // API 方法封裝
-const apiService = {
+const apiServiceMethods = {
   // GET 請求
   get: async (url, params = {}) => {
     try {
-      const response = await api.get(url, { params });
+      const response = await apiService.get(url, { params });
       return response;
     } catch (error) {
       throw error;
@@ -92,7 +92,7 @@ const apiService = {
   // POST 請求
   post: async (url, data = {}) => {
     try {
-      const response = await api.post(url, data);
+      const response = await apiService.post(url, data);
       return response;
     } catch (error) {
       throw error;
@@ -102,7 +102,7 @@ const apiService = {
   // PUT 請求
   put: async (url, data = {}) => {
     try {
-      const response = await api.put(url, data);
+      const response = await apiService.put(url, data);
       return response;
     } catch (error) {
       throw error;
@@ -112,7 +112,7 @@ const apiService = {
   // DELETE 請求
   delete: async (url) => {
     try {
-      const response = await api.delete(url);
+      const response = await apiService.delete(url);
       return response;
     } catch (error) {
       throw error;
@@ -120,7 +120,7 @@ const apiService = {
   },
 
   // 原始 axios 實例 (用於特殊需求)
-  axios: api
+  axios: apiService
 };
 
-export default apiService;
+export default apiServiceMethods;
