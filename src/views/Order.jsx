@@ -2,6 +2,40 @@ import React, { useState, useEffect, useRef } from "react";
 import DocumentIcon from "../component/icon";
 import axios from 'axios';
 import { utils, writeFile } from "xlsx";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { Input } from "@/components/ui/input"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+ 
+
+
+
+
+
 
 const Order = () => {
   // <---------------------------設定區域----------------------->
@@ -17,6 +51,7 @@ const Order = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
   const popupRef = useRef(null);
+  const [date, setDate] = React.useState(null);
 
   // <---------------------------調資料呈現在畫面----------------------->
   useEffect(() => {
@@ -96,6 +131,9 @@ const Order = () => {
     console.log(filteredOrders);
 
   };
+
+
+
   // <-----------------------------------function，open&closepopup------------------------------------------>
   const openPopup = (order) => {
     if (!order) return;
@@ -109,7 +147,7 @@ const Order = () => {
     setSelectedOrder(null);
     setOrderDetails([]);
   };
-// <-----------------------------------匯出csv和excel------------------------------------------>
+  // <-----------------------------------匯出csv和excel------------------------------------------>
   const handleExport = (format) => {
     if (filteredOrders.length === 0) {
       console.error("No data available to export");
@@ -126,12 +164,12 @@ const Order = () => {
       writeFile(workbook, "orders.xlsx");
     }
   };
-
+// <-----------------------------------return------------------------------------------>
   return (
     <React.Fragment>
       <header className="toolBar flex justify-between items-center py-0">
         <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
-          <div className="my-auto w-6">
+          <div className="my-auto w-6 pb-2">
             <DocumentIcon />
           </div>
           <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
@@ -151,190 +189,205 @@ const Order = () => {
           </button> */}
         </div>
         <div className="flex gap-2.5 max-sm:flex-col max-sm:w-full">
-        <button onClick={() => handleExport("csv")} className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full">匯出 CSV</button>
-        <button onClick={() => handleExport("excel")} className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full">匯出 Excel</button>
+          <button onClick={() => handleExport("csv")} className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full">匯出 CSV</button>
+          <button onClick={() => handleExport("excel")} className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full">匯出 Excel</button>
         </div>
       </header>
 
       {/* 搜尋區域 */}
+      {/* 篩選與搜尋區塊 */}
+      
       <section className="searchRow w-full mt-5 searchFilter flex flex-wrap gap-2 py-5 bg-white max-md:flex-wrap max-sm:flex-col">
-        <fieldset className="flex gap-2.5 justify-between items-center px-6 py-[22px] border border-solid border-neutral-200 w-[366px] h-[58px]">
-          <legend className="text-md font-medium text-zinc-700">訂單編號</legend>
-          <input
-            type="text"
-            className="w-[300px] h-[40px]  rounded px-2"
-            value={filters.orderId}
-            onChange={e => handleInputChange("orderId", e.target.value)}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
-            }}
+        <Input
+          type="text"
+          placeholder="訂單編號"
+          className="flex-grow gap-2.5 justify-between items-center px-6 py-3 border border-solid border-neutral-200 w-[366px] h-[46px] rounded-md"
+          value={filters.orderId}
+          onChange={e => handleInputChange("orderId", e.target.value)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearch();
+          }}
+        />
 
-          />
-        </fieldset>
+        <Select
+          value={filters.tradeStatus}
+          onValueChange={(value) => handleInputChange("tradeStatus", value)}
+        >
+          <SelectTrigger className="flex gap-2 justify-between items-center px-6 py-3 
+              border border-solid border-neutral-200 w-[420px] h-[46px] rounded-md">
+            <SelectValue placeholder="交易狀態" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="全部">全部</SelectItem>
+            <SelectItem value="交易成功">交易成功</SelectItem>
+            <SelectItem value="交易失敗">交易失敗</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <fieldset className="flex gap-2.5 justify-between items-center px-6 py-[22px] border border-solid border-neutral-200 w-[420px] h-[58px]">
-          <legend className="text-md font-medium text-zinc-700">交易狀態</legend>
-          <select
-            className="w-[366px] h-[40px]  rounded px-2"
-            value={filters.tradeStatus}
-            onChange={e => handleInputChange("tradeStatus", e.target.value)}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
-            }}
-          >
-            <option value="全部">全部</option>
-            <option value="交易成功">交易成功</option>
-            <option value="交易失敗">交易失敗</option>
-          </select>
-        </fieldset>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[280px] justify-between text-left font-normal h-[46px] rounded-md",
+                !filters.startDate && "text-muted-foreground"
+              )}
+            >
+               {filters.startDate ? format(new Date(filters.startDate), "PPP") : <span>起始日期</span>}
+              <CalendarIcon className="mr-2 h-4 w-4" />
+             
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={filters.startDate ? new Date(filters.startDate) : null}
+              onSelect={(newDate) => {
+                handleInputChange("startDate", newDate);
+                handleSearch();
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
 
-        <fieldset className="flex gap-2.5 justify-center items-center px-4 py-[22px] border border-solid border-neutral-200 w-[312px] h-[58px]">
-          <legend className="text-md font-medium text-zinc-700">起始日期</legend>
-          <input
-            className="w-[280px] h-[40px]  rounded px-2"
-            type="date"
-            value={filters.startDate}
-            onChange={e => handleInputChange("startDate", e.target.value)}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
-            }}
-          />
-        </fieldset>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[280px] justify-between text-left font-normal h-[46px] rounded-md",
+                !filters.endDate && "text-muted-foreground"
+              )}
+            >
+              {filters.endDate ? format(new Date(filters.endDate), "PPP") : <span>終止日期</span>}
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single" 
+              selected={filters.endDate ? new Date(filters.endDate) : null}
+              onSelect={(newDate) => {
+                handleInputChange("endDate", newDate);
+                handleSearch();
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
 
-        <fieldset className="flex gap-2.5 justify-center items-center px-4 py-[22px] border border-solid border-neutral-200 w-[312px] h-[58px]">
-          <legend className="text-md font-medium text-zinc-700">終止日期</legend>
-          <input
-            className="w-[280px] h-[40px]  rounded px-2"
-            type="date"
-            value={filters.endDate}
-            onChange={e => handleInputChange("endDate", e.target.value)}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
-            }}
-          />
-        </fieldset>
+       
+        
 
         {/* <SearchButton onClick={handleSearch} /> */}
         {/* 移除SearchButton組件，直接使用HTML按鈕 */}
-<button 
-  type="button"
-  onClick={handleSearch}  // 直接調用handleSearch，不通過任何中間組件
-  className="mt-3 bg-brandBlue-normal hover:bg-brandBlue-dark text-white font-bold py-2 px-5 rounded "
->
-  搜尋
-</button>
+        <Button
+          type="button"
+          onClick={handleSearch}  // 直接調用handleSearch，不通過任何中間組件
+          className=" bg-brandBlue-normal hover:bg-brandBlue-dark text-white py-2 px-5 h-[46px] rounded-md"
+        >
+          搜尋
+        </Button>
       </section>
+      {/* <!-- Table Header --> */}
 
-      <section className="w-full mt-5 bg-white rounded-lg border border-solid border-[#D9D9D9]">
-        {/* <!-- Table Header --> */}
-        <header className="w-[1200] grid p-4 border-b border-solid bg-zinc-50 border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]">
-          <h3 className="w-[254] text-base font-medium text-neutral-700 max-md:py-2.5">
-            訂單編號
-          </h3>
-          <h3 className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-            交易編號
-          </h3>
-          <h3 className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-            交易時間
-          </h3>
-          <h3 className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-            買家ID
-          </h3>
-          <h3 className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-            訂單金額
-          </h3>
-          <h3 className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-            付款方式
-          </h3>
-          <h3 className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-            狀態
-          </h3>
-          <h3 className="text-base flex justify-center font-medium text-neutral-700 max-md:px-5 max-md:py-2.5">
-            操作
-          </h3>
-        </header>
+      <div className="table w-full mt-5 bg-white rounded-lg border border-solid border-[#D9D9D9]">
+        <Table >
+          <TableRow>
+            {/* <header className="w-[1200] grid p-4 border-b border-solid bg-zinc-50 border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"> */}
+            <TableHeader className="w-[1200] grid px-4 pt-3 border-b border-solid bg-gray-200  grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]">
+              <TableHead >
+                訂單編號
+              </TableHead>
+              <TableHead >
+                交易編號
+              </TableHead>
+              <TableHead >
+                交易時間
+              </TableHead>
+              <TableHead >
+                買家ID
+              </TableHead>
+              <TableHead >
+                訂單金額
+              </TableHead>
+              <TableHead >
+                付款方式
+              </TableHead>
+              <TableHead>
+                狀態
+              </TableHead>
+              <TableHead className="ml-[32px]">
+                操作
+              </TableHead>
+            </TableHeader>
+          </TableRow>
+          {/* <!-- Table Row --> */}
+          <TableRow>
+            {filteredOrders.map((orderData) => (
+              <TableBody
+                key={orderData.order_id}
+                className="grid px-4 py-2 border-b border-solid border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"
+              >
+                <TableCell>
+                  {orderData.order_id}
+                </TableCell>
+                <TableCell>
+                  {orderData.trade_No}
+                </TableCell>
+                <TableCell>
+                  {orderData.trade_Date}
+                </TableCell>
+                <TableCell>
+                  {orderData.id}
+                </TableCell>
+                <TableCell>
+                  {orderData.total_price_with_discount}
+                </TableCell>
+                <TableCell>
+                  {orderData.payment_type}
+                </TableCell>
+                <TableCell >
+                  {orderData.trade_status}
+                </TableCell>
+                <TableCell className=" ml-[32px]">
+                  <button onClick={() => openPopup(orderData)} className="cursor-pointer " aria-label="View order details">
+                    <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="action-icon">
+                      <path d="M21.1303 10.253C22.2899 11.4731 22.2899 13.3267 21.1303 14.5468C19.1745 16.6046 15.8155 19.3999 12 19.3999C8.18448 19.3999 4.82549 16.6046 2.86971 14.5468C1.7101 13.3267 1.7101 11.4731 2.86971 10.253C4.82549 8.19524 8.18448 5.3999 12 5.3999C15.8155 5.3999 19.1745 8.19523 21.1303 10.253Z" stroke="#484848" strokeWidth="1.5"></path>
+                      <path d="M15 12.3999C15 14.0568 13.6569 15.3999 12 15.3999C10.3431 15.3999 9 14.0568 9 12.3999C9 10.743 10.3431 9.3999 12 9.3999C13.6569 9.3999 15 10.743 15 12.3999Z" stroke="#484848" strokeWidth="1.5"></path>
+                    </svg>
+                  </button>
+                </TableCell>
 
-        {/* <!-- Table Row --> */}
-        {orderList.map((orderData) => (
-                <article key={orderData.order_id} className="grid p-4 border-b border-solid border-b-[#E4E4E4] grid-cols-8">
-                <p className="text-base font-medium">{orderData.order_id}</p>
-                <p className="text-base font-medium">{orderData.trade_No}</p>
-                <p className="text-base font-medium">{orderData.trade_Date}</p>
-                <p className="text-base font-medium">{orderData.member_Id}</p>
-                <p className="text-base font-medium">{orderData.total_price_with_discount}</p>
-                <p className="text-base font-medium">{orderData.payment_type}</p>
-                <p className="text-base font-medium">{orderData.trade_status}</p>
-                <div className="flex gap-2 text-base font-medium justify-center">
-                    <button onClick={() => openPopup(orderData)} className="point-cursor">
-                        查看詳情
-                    </button>
-                </div>
-            </article>
-        ))}
-        {filteredOrders.map((orderData) => (
-          <article
-            key={orderData.order_id}
-            className="grid p-4 border-b border-solid border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"
-          >
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.order_id}
-            </p>
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.trade_No}
-            </p>
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.trade_Date}
-            </p>
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.id}
-            </p>
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.total_price_with_discount}
-            </p>
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.payment_type}
-            </p>
-            <p className="text-base font-medium text-neutral-700 max-md:px-0 max-md:py-2.5">
-              {orderData.trade_status}
-            </p>
-            <div className="flex gap-2 text-base font-medium justify-center text-neutral-700 max-md:px-0 max-md:py-2.5 max-sm:justify-start">
-              <button onClick={() => openPopup(orderData)} className="cursor-pointer" aria-label="View order details">
-                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="action-icon">
-                  <path d="M21.1303 10.253C22.2899 11.4731 22.2899 13.3267 21.1303 14.5468C19.1745 16.6046 15.8155 19.3999 12 19.3999C8.18448 19.3999 4.82549 16.6046 2.86971 14.5468C1.7101 13.3267 1.7101 11.4731 2.86971 10.253C4.82549 8.19524 8.18448 5.3999 12 5.3999C15.8155 5.3999 19.1745 8.19523 21.1303 10.253Z" stroke="#484848" strokeWidth="1.5"></path>
-                  <path d="M15 12.3999C15 14.0568 13.6569 15.3999 12 15.3999C10.3431 15.3999 9 14.0568 9 12.3999C9 10.743 10.3431 9.3999 12 9.3999C13.6569 9.3999 15 10.743 15 12.3999Z" stroke="#484848" strokeWidth="1.5"></path>
+              </TableBody>
+            ))}
+          </TableRow>
+          {/* <!-- Table Footer --> */}
+          <footer className="flex justify-between items-center p-4 bg-slate-50 max-sm:flex-col max-sm:gap-5">
+            <select className="cursor-pointer flex gap-2 items-center px-4 py-2 text-sm bg-white rounded-lg border border-solid border-[#D9D9D9] text-neutral-600">
+              <option value="">顯示20筆</option>
+              <option value="">顯示50筆</option>
+              <option value="">顯示100筆</option>
+            </select>
+            <nav className="flex gap-2 items-center max-sm:justify-center max-sm:w-full" aria-label="Pagination">
+              <button aria-label="Previous page">
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="page-nav">
+                  <path d="M15.09 18.3999L16.5 16.9899L11.92 12.3999L16.5 7.8099L15.09 6.3999L9.09 12.3999L15.09 18.3999Z" fill="#626981"></path>
                 </svg>
               </button>
-            </div>
-          </article>
-        ))}
-
-        {/* <!-- Table Footer --> */}
-        <footer className="flex justify-between items-center p-4 bg-slate-50 max-sm:flex-col max-sm:gap-5">
-          <select className="cursor-pointer flex gap-2 items-center px-4 py-2 text-sm bg-white rounded-lg border border-solid border-[#D9D9D9] text-neutral-600">
-            <option value="">顯示20筆</option>
-            <option value="">顯示50筆</option>
-            <option value="">顯示100筆</option>
-          </select>
-
-          <nav className="flex gap-2 items-center max-sm:justify-center max-sm:w-full" aria-label="Pagination">
-            <button aria-label="Previous page">
-              <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="page-nav">
-                <path d="M15.09 18.3999L16.5 16.9899L11.92 12.3999L16.5 7.8099L15.09 6.3999L9.09 12.3999L15.09 18.3999Z" fill="#626981"></path>
-              </svg>
-            </button>
-            <span className="text-sm text-neutral-500">1/10</span>
-            <button aria-label="Next page">
-              <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="page-nav">
-                <path d="M10.41 6.3999L9 7.8099L13.58 12.3999L9 16.9899L10.41 18.3999L16.41 12.3999L10.41 6.3999Z" fill="#626981"></path>
-              </svg>
-            </button>
-          </nav>
-        </footer>
-      </section>
+              <span className="text-sm text-neutral-500">1/10</span>
+              <button aria-label="Next page">
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="page-nav">
+                  <path d="M10.41 6.3999L9 7.8099L13.58 12.3999L9 16.9899L10.41 18.3999L16.41 12.3999L10.41 6.3999Z" fill="#626981"></path>
+                </svg>
+              </button>
+            </nav>
+          </footer>
+        </Table>
+      </div>
 
       {/* Popup */}
       {isPopupOpen && selectedOrder && (
