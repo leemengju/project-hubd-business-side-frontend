@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,26 +23,67 @@ import banner2 from "../assets/images/store/banner2.JPG";
 import banner3 from "../assets/images/store/banner3.JPG";
 
 const Products = () => {
-  const [editProduct, setEditProduct] = useState(null); // 追蹤當前要編輯的商品
+  const [editProduct, setEditProduct] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
 
-  const [products] = useState([
-    {
-      id: "RDD0001",
-      image: "https://via.placeholder.com/50",
-      name: "潮流東大門神社紀念版大學長外套",
-      price: 2000,
-      stock: 120,
-      status: "active",
-      specifications: [],
-      category: "clothing",
-      subcategory: "jacket",
-      description: "限量發售，經典復刻。",
-      material: "棉質",
-      specification: "L / XL",
-      shipping: "7天內發貨",
-      additional: "手洗建議",
-    },
-  ]);
+  // 從後端獲取商品數據
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/products", {
+          credentials: "include",
+        });
+        const data = await response.json();
+        setProducts(data);
+        setFilteredProducts(data);
+      } catch (error) {
+        console.error("獲取商品失敗:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // 處理搜尋和篩選
+  useEffect(() => {
+    let filtered = [...products];
+
+    // 分類篩選
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    // 價格區間篩選
+    if (selectedPriceRange !== "all") {
+      filtered = filtered.filter(product => {
+        const price = Number(product.price);
+        switch (selectedPriceRange) {
+          case "low":
+            return price <= 1000;
+          case "mid":
+            return price > 1000 && price <= 5000;
+          case "high":
+            return price > 5000;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // 關鍵字搜尋
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredProducts(filtered);
+  }, [products, selectedCategory, selectedPriceRange, searchTerm]);
 
   // 賣場輪播圖部分
   const [blocks, setBlocks] = useState([
@@ -186,30 +227,35 @@ const Products = () => {
           
           {/* 篩選與搜尋區塊 */}
           <div className="flex gap-2 mb-4">
-            <Select>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="選擇分類" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部</SelectItem>
-                <SelectItem value="clothing">服飾</SelectItem>
-                <SelectItem value="accessories">配件</SelectItem>
+                <SelectItem value="服飾">服飾</SelectItem>
+                <SelectItem value="飾品">飾品</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select>
+            <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="價格區間" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
                 <SelectItem value="low">0 - 1000</SelectItem>
                 <SelectItem value="mid">1000 - 5000</SelectItem>
                 <SelectItem value="high">5000+</SelectItem>
               </SelectContent>
             </Select>
 
-            <Input placeholder="搜尋商品..." className="flex-grow" />
-            <Button className="bg-[#626981] text-white">搜尋</Button>
+            <Input 
+              placeholder="搜尋商品..." 
+              className="flex-grow"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
 
           {/* 商品列表 Table */}
@@ -227,8 +273,8 @@ const Products = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product, index) => (
-                  <TableRow key={index}>
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
                     <TableCell>{product.id}</TableCell>
                     <TableCell>
                       <img src={product.image} alt="商品" className="w-10 h-10" />
@@ -243,23 +289,15 @@ const Products = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="active">上架中</SelectItem>
-                          <SelectItem value="unactive">下架中</SelectItem>
+                          <SelectItem value="inactive">下架中</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell className="flex gap-2">
-                      {/* 點擊編輯時，設置當前選中的商品到 editProduct */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          console.log("Editing product:", product); // 確認商品數據是否正確
-                          setEditProduct(product);
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1m-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71m10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z" /></svg>
+                      <Button variant="outline" onClick={() => setEditProduct(product)}>
+                        編輯
                       </Button>
-
+                      <Button variant="destructive">刪除</Button>
                     </TableCell>
                   </TableRow>
                 ))}
