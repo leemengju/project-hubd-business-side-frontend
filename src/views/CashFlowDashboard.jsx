@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import CashFlow from './CashFlow';
-import CashFlowSettings from '../components/cash-flow/CashFlowSettings';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   CreditCardIcon, 
   Settings2Icon,
   CircleDollarSignIcon,
-  ChevronRightIcon,
+  ChevronRightIcon
 } from "lucide-react";
 
 const CashFlowDashboard = () => {
@@ -77,8 +75,7 @@ const CashFlowDashboard = () => {
       </div>
       
       <div className="flex-1 overflow-auto p-6">
-        {activeTab === "transactions" && <CashFlow />}
-        {activeTab === "settings" && <CashFlowSettings />}
+        <Outlet />
       </div>
     </div>
   );

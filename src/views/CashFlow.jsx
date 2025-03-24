@@ -24,7 +24,8 @@ import {
   CoinsIcon,
   FilterIcon,
   ChevronRightIcon,
-  Loader2Icon
+  Loader2Icon,
+  Settings2Icon
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import CashFlowChart from "../components/cash-flow/CashFlowChart";
+import { Link } from "react-router-dom";
 
 const CashFlow = () => {
   const [dailyTransactions, setDailyTransactions] = useState([]);
@@ -51,6 +54,8 @@ const CashFlow = () => {
     pendingReconciliation: 0,
     completedReconciliation: 0
   });
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
 
   // 日期篩選
   const today = new Date();
@@ -379,6 +384,22 @@ const CashFlow = () => {
     );
   };
 
+  // 處理點擊交易項目，顯示訂單詳情
+  const handleOrderClick = async (orderId) => {
+    setIsLoading(true);
+    try {
+      // 根據訂單 ID 獲取詳細資訊
+      const response = await apiService.get(`/transactions/order/${orderId}`);
+      setCurrentOrder(response.data);
+      setShowOrderDetail(true);
+    } catch (error) {
+      console.error("獲取訂單詳情失敗:", error);
+      toast.error("無法獲取訂單詳情，請稍後再試");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 渲染日交易詳細信息模態窗口
   const renderDailyDetailModal = () => {
     if (!showDetail) return null;
@@ -453,6 +474,9 @@ const CashFlow = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           備註
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          查看
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -482,10 +506,24 @@ const CashFlow = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {transaction.notes || '無'}
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOrderClick(transaction.order_id);
+                                }}
+                                className="flex items-center gap-1"
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                                查看
+                              </Button>
+                            </td>
                           </tr>
                         )) : 
                         <tr>
-                          <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                          <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                             該日無交易記錄
                           </td>
                         </tr>
@@ -513,52 +551,59 @@ const CashFlow = () => {
   // 渲染金流統計卡片
   const renderStatsCards = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-500">總收入</p>
-              <h3 className="text-2xl font-bold text-green-600">{formatAmount(stats.totalIncome)}</h3>
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-lg border shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-500">總收入</p>
+                <h3 className="text-2xl font-bold text-green-600">{formatAmount(stats.totalIncome)}</h3>
+              </div>
+              <div className="bg-green-100 p-2 rounded-full">
+                <ArrowDownIcon className="h-6 w-6 text-green-600" />
+              </div>
             </div>
-            <div className="bg-green-100 p-2 rounded-full">
-              <ArrowDownIcon className="h-6 w-6 text-green-600" />
+          </div>
+          <div className="bg-white p-4 rounded-lg border shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-500">總支出</p>
+                <h3 className="text-2xl font-bold text-red-600">{formatAmount(stats.totalOutcome)}</h3>
+              </div>
+              <div className="bg-red-100 p-2 rounded-full">
+                <ArrowUpIcon className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-500">待對帳交易天數</p>
+                <h3 className="text-2xl font-bold text-yellow-600">{stats.pendingReconciliation}</h3>
+              </div>
+              <div className="bg-yellow-100 p-2 rounded-full">
+                <RefreshCwIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-500">已對帳交易天數</p>
+                <h3 className="text-2xl font-bold text-blue-600">{stats.completedReconciliation}</h3>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-full">
+                <CheckCircleIcon className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-500">總支出</p>
-              <h3 className="text-2xl font-bold text-red-600">{formatAmount(stats.totalOutcome)}</h3>
-            </div>
-            <div className="bg-red-100 p-2 rounded-full">
-              <ArrowUpIcon className="h-6 w-6 text-red-600" />
-            </div>
-          </div>
+        
+        {/* 添加交易趨勢圖表 */}
+        <div className="mb-6">
+          <CashFlowChart dateRange={dateRange} />
         </div>
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-500">待對帳交易天數</p>
-              <h3 className="text-2xl font-bold text-yellow-600">{stats.pendingReconciliation}</h3>
-            </div>
-            <div className="bg-yellow-100 p-2 rounded-full">
-              <RefreshCwIcon className="h-6 w-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-500">已對帳交易天數</p>
-              <h3 className="text-2xl font-bold text-blue-600">{stats.completedReconciliation}</h3>
-            </div>
-            <div className="bg-blue-100 p-2 rounded-full">
-              <CheckCircleIcon className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-      </div>
+      </>
     );
   };
 
@@ -609,30 +654,150 @@ const CashFlow = () => {
     );
   };
 
+  // 添加訂單詳情對話框
+  const renderOrderDetailModal = () => {
+    if (!showOrderDetail || !currentOrder) return null;
+
+    return (
+      <Dialog open={showOrderDetail} onOpenChange={setShowOrderDetail}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              訂單詳情 #{currentOrder.order_id}
+            </DialogTitle>
+            <DialogDescription>
+              交易時間: {formatDate(currentOrder.trade_Date)}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2Icon className="h-8 w-8 animate-spin text-gray-500" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">訂單金額</h3>
+                  <p className="text-2xl font-bold text-blue-600">{formatAmount(currentOrder.total_price_with_discount)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">支付方式</h3>
+                  <p className="text-xl font-semibold flex items-center">
+                    {getPaymentMethodIcon(currentOrder.payment_type)}
+                    <span className="ml-2">{currentOrder.payment_type}</span>
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">交易狀態</h3>
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyles(currentOrder.trade_status)}`}>
+                    {currentOrder.trade_status}
+                  </span>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">交易編號</h3>
+                  <p className="font-mono text-gray-700">{currentOrder.trade_No}</p>
+                </div>
+              </div>
+
+              {currentOrder.notes && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-blue-700 mb-2">交易備註</h3>
+                  <p className="text-gray-700">{currentOrder.notes}</p>
+                </div>
+              )}
+
+              <div className="border rounded-lg overflow-hidden mb-6">
+                <h3 className="px-6 py-3 bg-gray-50 font-medium">訂單項目</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商品名稱</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">尺寸</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">顏色</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">數量</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">單價</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">小計</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {currentOrder.order_items && currentOrder.order_items.length > 0 ? (
+                        currentOrder.order_items.map((item, index) => (
+                          <tr key={`item-${index}`}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm font-medium text-gray-900">{item.product_name}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.product_size}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.product_color}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatAmount(item.product_price)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatAmount(item.product_price * item.quantity)}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="px-6 py-4 text-center text-gray-500">無訂單項目資料</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">訂單成立時間: {formatDate(currentOrder.created_at)}</p>
+                <div className="text-right">
+                  <p className="text-lg font-semibold">總金額: <span className="text-blue-600">{formatAmount(currentOrder.total_price_with_discount)}</span></p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return (
     <section className="w-full h-full bg-white p-6 rounded-lg shadow-sm overflow-y-auto">
-      {/* 頁面標題 */}
+      {/* 頁面標題和右側添加設定按鈕 */}
       <div className="mb-6">
-        <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
-          <div className="my-auto">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="25"
-              height="25"
-              viewBox="0 0 20 20"
-              className="text-brandBlue-normal"
-            >
-              <path
-                fill="currentColor"
-                d="M10 20a10 10 0 1 1 0-20a10 10 0 0 1 0 20m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m-1-7.59V4h2v5.59l3.95 3.95l-1.41 1.41L9 10.41l-3.54 3.54l-1.41-1.41L8 8.59"
-              />
-            </svg>
+        <div className="flex justify-between items-center">
+          <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
+            <div className="my-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="25"
+                height="25"
+                viewBox="0 0 20 20"
+                className="text-brandBlue-normal"
+              >
+                <path
+                  fill="currentColor"
+                  d="M10 20a10 10 0 1 1 0-20a10 10 0 0 1 0 20m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m-1-7.59V4h2v5.59l3.95 3.95l-1.41 1.41L9 10.41l-3.54 3.54l-1.41-1.41L8 8.59"
+                />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
+                金流管理
+              </h1>
+              <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
+            </div>
           </div>
-          <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
-            金流管理
-          </h1>
+          <Link to="/cash-flow/settings">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Settings2Icon className="h-4 w-4" />
+              金流設定
+            </Button>
+          </Link>
         </div>
-        <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
       </div>
 
       {/* 统计卡片 */}
@@ -885,6 +1050,9 @@ const CashFlow = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 添加訂單詳情模態窗口 */}
+      {renderOrderDetailModal()}
     </section>
   );
 };
