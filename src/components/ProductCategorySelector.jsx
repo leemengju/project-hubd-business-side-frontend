@@ -75,7 +75,7 @@ const ProductCategorySelector = ({
         if (type === 'products' || type === 'applicable_products') {
           endpoint = '/products';
         } else if (type === 'categories' || type === 'applicable_categories') {
-          endpoint = '/product-classifications';
+          endpoint = '/categories';
         } else if (type === 'users') {
           endpoint = '/users';
         }
@@ -92,7 +92,7 @@ const ProductCategorySelector = ({
     // 如果是商品選擇器，同時獲取分類列表用於篩選
     const fetchCategories = async () => {
       try {
-        const response = await api.get('/product-classifications');
+        const response = await api.get('/categories');
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);
