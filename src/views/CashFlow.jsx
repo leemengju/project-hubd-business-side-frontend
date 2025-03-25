@@ -145,6 +145,7 @@ const CashFlow = () => {
   const fetchStats = async () => {
     try {
       const response = await apiService.get("/payments/dashboard");
+      console.log("Dashboard API response:", response.data); // 添加日誌輸出
       setStats({
         totalSales: response.data.stats.total_sales || 0,
         transactionCount: response.data.stats.transaction_count || 0,
@@ -646,29 +647,6 @@ const CashFlow = () => {
           </div>
         </div>
 
-        {/* 平均客單價 */}
-        <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">平均客單價</p>
-              <h4 className="text-2xl font-semibold mt-1">
-                {isLoading ? (
-                  <div className="w-20 h-7 bg-gray-200 animate-pulse rounded"></div>
-                ) : (
-                  <span>
-                    {stats.transactionCount
-                      ? formatAmount(stats.totalSales / stats.transactionCount)
-                      : formatAmount(0)}
-                  </span>
-                )}
-              </h4>
-            </div>
-            <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
-              <ReceiptIcon className="h-6 w-6 text-brandBlue-normal" />
-            </div>
-          </div>
-        </div>
-
         {/* 手續費支出 */}
         <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
           <div className="flex items-center justify-between">
@@ -684,6 +662,25 @@ const CashFlow = () => {
             </div>
             <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
               <PercentIcon className="h-6 w-6 text-brandBlue-normal" />
+            </div>
+          </div>
+        </div>
+
+        {/* 待對帳天數 */}
+        <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">待對帳天數</p>
+              <h4 className="text-2xl font-semibold mt-1">
+                {isLoading ? (
+                  <div className="w-16 h-7 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <span>{stats.pendingReconciliation || 0} 天</span>
+                )}
+              </h4>
+            </div>
+            <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+              <ClipboardCheckIcon className="h-6 w-6 text-brandBlue-normal" />
             </div>
           </div>
         </div>
