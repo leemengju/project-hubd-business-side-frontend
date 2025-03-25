@@ -6,38 +6,40 @@ import apiService from "../services/api";
 import { toast } from "react-hot-toast";
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { zhTW } from "date-fns/locale";
-import { 
-  CalendarIcon, 
-  SearchIcon, 
-  FileTextIcon, 
-  DownloadIcon, 
-  UploadIcon, 
-  ArrowDownIcon,
-  ArrowUpIcon,
-  EyeIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  InfoIcon,
-  RefreshCwIcon,
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ShoppingBagIcon,
   CreditCardIcon,
   ReceiptIcon,
-  CoinsIcon,
-  FilterIcon,
-  ChevronRightIcon,
-  Loader2Icon,
-  Settings2Icon,
-  ClockIcon,
   DollarSignIcon,
-  PercentIcon,
+  CalendarIcon,
+  SearchIcon,
+  Loader2Icon,
+  PlusIcon,
+  EyeIcon,
+  SettingsIcon,
+  RefreshCwIcon,
+  DownloadIcon,
+  CoinsIcon,
+  SlidersIcon,
   TrendingUpIcon,
   TrendingDownIcon,
-  ClipboardListIcon,
-  ShoppingBagIcon,
-  ShoppingCartIcon,
+  FileTextIcon,
+  PercentIcon,
   ActivityIcon,
-  HashIcon,
-  ClipboardCheckIcon,
+  CheckCircleIcon,
   AlertTriangleIcon,
+  ClockIcon,
+  CheckIcon,
+  HashIcon,
+  ExternalLinkIcon,
+  ClipboardListIcon,
+  CircleIcon,
+  Settings2Icon,
+  ShoppingCartIcon,
+  FilterIcon,
+  ClipboardCheckIcon,
   SaveIcon
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -793,31 +795,48 @@ const CashFlow = () => {
   const renderStatusBadge = (status) => {
     let className = '';
     let text = '';
+    let icon = null;
+    
+    // 添加調試
+    console.log("渲染狀態標籤:", status);
     
     switch(status) {
       case 'normal':
         className = 'bg-green-100 text-green-800 border-green-300';
         text = '正常';
+        icon = <CheckCircleIcon className="h-3 w-3 mr-1" />;
         break;
       case 'abnormal':
         className = 'bg-red-100 text-red-800 border-red-300';
         text = '異常';
+        icon = <AlertTriangleIcon className="h-3 w-3 mr-1" />;
         break;
       case 'pending':
         className = 'bg-yellow-100 text-yellow-800 border-yellow-300';
         text = '待處理';
+        icon = <ClockIcon className="h-3 w-3 mr-1" />;
         break;
       case 'completed': // 兼容舊數據
         className = 'bg-green-100 text-green-800 border-green-300';
-        text = '正常';
+        text = '已對帳';
+        icon = <CheckCircleIcon className="h-3 w-3 mr-1" />;
+        break;
+      case null:
+      case undefined:
+      case '':
+        className = 'bg-gray-100 text-gray-800 border-gray-300';
+        text = '未對帳';
+        icon = <CircleIcon className="h-3 w-3 mr-1" />;
         break;
       default:
         className = 'bg-gray-100 text-gray-800 border-gray-300';
-        text = '未對帳';
+        text = status || '未對帳';
+        icon = <CircleIcon className="h-3 w-3 mr-1" />;
     }
     
     return (
-      <span className={`px-2 py-1 text-xs rounded-full border ${className}`}>
+      <span className={`inline-flex items-center px-2 py-1 text-xs rounded-full border ${className}`}>
+        {icon}
         {text}
       </span>
     );
@@ -1243,21 +1262,21 @@ const CashFlow = () => {
           
           <div className="grid gap-6 py-4">
             <RadioGroup defaultValue="normal" value={selectedStatus} onValueChange={setSelectedStatus} className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:border-brandBlue-light cursor-pointer transition-colors">
+              <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'normal' ? 'bg-green-50 border-green-300 ring-2 ring-green-200' : 'hover:border-brandBlue-light'}`}>
                 <RadioGroupItem value="normal" id="normal" className="sr-only" />
                 <Label htmlFor="normal" className="cursor-pointer text-center">
                   <CheckCircleIcon className="h-8 w-8 mb-2 mx-auto text-green-500" />
                   <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">正常</span>
                 </Label>
               </div>
-              <div className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:border-brandBlue-light cursor-pointer transition-colors">
+              <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'abnormal' ? 'bg-red-50 border-red-300 ring-2 ring-red-200' : 'hover:border-brandBlue-light'}`}>
                 <RadioGroupItem value="abnormal" id="abnormal" className="sr-only" />
                 <Label htmlFor="abnormal" className="cursor-pointer text-center">
                   <AlertTriangleIcon className="h-8 w-8 mb-2 mx-auto text-red-500" />
                   <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">異常</span>
                 </Label>
               </div>
-              <div className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:border-brandBlue-light cursor-pointer transition-colors">
+              <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'pending' ? 'bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200' : 'hover:border-brandBlue-light'}`}>
                 <RadioGroupItem value="pending" id="pending" className="sr-only" />
                 <Label htmlFor="pending" className="cursor-pointer text-center">
                   <ClockIcon className="h-8 w-8 mb-2 mx-auto text-amber-500" />
