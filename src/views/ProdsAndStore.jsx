@@ -370,11 +370,7 @@ const Products = () => {
             商品＆賣場管理
           </span>
         </div>
-        <AddProductDialog 
-          editProduct={editProduct} 
-          setEditProduct={setEditProduct} 
-          onProductUpdated={fetchProducts}
-        />
+        
       </div>
       {/* Tabs 切換選單 */}
       <Tabs defaultValue="products">
@@ -384,11 +380,11 @@ const Products = () => {
             <TabsTrigger value="carousel">賣場輪播圖</TabsTrigger>
           </TabsList>
           <TabsContent value="products">
-            {/* 新增商品按鈕 & Drawer */}
-            <AddProductDialog
-              editProduct={editProduct}
-              setEditProduct={setEditProduct}
-            />
+          <AddProductDialog 
+          editProduct={editProduct} 
+          setEditProduct={setEditProduct} 
+          onProductUpdated={fetchProducts}
+        />
           </TabsContent>
         </div>
         <TabsContent value="products">

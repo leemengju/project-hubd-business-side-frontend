@@ -11,6 +11,13 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { CSVLink } from "react-csv";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const headers = [
   { label: "會員編號", key: "id" },
@@ -28,19 +35,19 @@ const Member = () => {
   const [orderData, setOrderData] = useState({ totalOrders: 0, totalSpent: 0 }); //訂單數＆消費總金額
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const membersPerPage = 30; //每頁最多30筆
+  const [itemsPerPage, setItemsPerPage] = useState(30); // 修改為 itemsPerPage 變數
 
   useEffect(() => {
-    
-    axios 
-      .get(`http://127.0.0.1:8000/api/users?page=${currentPage}`) // 這裡換成你的 API 路徑  前端使用 Lazy Loading
+
+    axios
+      .get(`http://127.0.0.1:8000/api/users?page=${currentPage}&per_page=${itemsPerPage}`) // 增加每頁顯示數量參數
       .then((response) => {
         console.log("✅ API 資料：", response.data);
         setMembers(Array.isArray(response.data) ? response.data : []); // 把資料存入 members
         setTotalPages(response.data.last_page || 1);
       })
-        .catch((error) => console.error("Error fetching members:", error));
-  }, [currentPage]);// 只有當 currentPage 改變時，才重新載入資料
+      .catch((error) => console.error("Error fetching members:", error));
+  }, [currentPage, itemsPerPage]);// 當 currentPage 或 itemsPerPage 改變時，重新載入資料
 
   // 點擊檢視按鈕時，設定選中的會員並顯示 Modal
   const handleViewMember = (member) => {
@@ -70,9 +77,8 @@ const Member = () => {
   };
 
   //計算當前頁應該顯示的資料
-  // const totalPages = Math.ceil(members.length / membersPerPage);
-  const indexOfLastMember = currentPage * membersPerPage;
-  const indexOfFirstMember = indexOfLastMember - membersPerPage;
+  const indexOfLastMember = currentPage * itemsPerPage;
+  const indexOfFirstMember = indexOfLastMember - itemsPerPage;
   const currentMembers = members;
   console.log("畫面上 members 狀態：", members);
   return (
@@ -133,77 +139,112 @@ const Member = () => {
         </CSVLink>
       </div>
 
-      <Table className="w-full border rounded-lg overflow-hidden">
-        <TableCaption>會員資訊列表</TableCaption>
-        <TableHeader>
-          <TableRow className="bg-gray-200">
-            <TableHead className="w-[100px] text-center">會員編號</TableHead>
-            <TableHead className="text-center">姓名</TableHead>
-            <TableHead className="text-center">Email</TableHead>
-            <TableHead className="text-center">手機</TableHead>
-            <TableHead className="text-center">生日</TableHead>
-            <TableHead className="text-center">建立時間</TableHead>
-            <TableHead className="text-center">操作</TableHead>
-          </TableRow>
-        </TableHeader>
+      <div className="border rounded-lg overflow-hidden">
 
-        <TableBody>
-          {/* 動態生成會員內容 */}
-          {currentMembers.length > 0 ? (
-            currentMembers.map((member) => (
-              <TableRow key={member.id} className="border-b hover:bg-gray-100">
-                <TableCell className="text-center font-medium">
-                  {member.id}
-                </TableCell>
-                <TableCell className="text-center">{member.name}</TableCell>
-                <TableCell className="text-center">{member.email}</TableCell>
-                <TableCell className="text-center">{member.phone}</TableCell>
-                <TableCell className="text-center">{member.birthday}</TableCell>
-                <TableCell className="text-center">
-                  {new Date(member.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mr-2 bg-brandBlue-normal text-white"
-                    onClick={() => handleViewMember(member)} // 點擊檢視按鈕
-                  >
-                    檢視
-                  </Button>
+        <Table className="w-full">
+          {/* <TableCaption>會員資訊列表</TableCaption> */}
+          <TableHeader>
+            <TableRow className="bg-gray-200">
+              <TableHead className="w-[100px] text-center">會員編號</TableHead>
+              <TableHead className="text-center">姓名</TableHead>
+              <TableHead className="text-center">Email</TableHead>
+              <TableHead className="text-center">手機</TableHead>
+              <TableHead className="text-center">生日</TableHead>
+              <TableHead className="text-center">建立時間</TableHead>
+              <TableHead className="text-center">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {/* 動態生成會員內容 */}
+            {currentMembers.length > 0 ? (
+              currentMembers.map((member) => (
+                <TableRow key={member.id} className="border-b hover:bg-gray-100">
+                  <TableCell className="text-center font-medium">
+                    {member.id}
+                  </TableCell>
+                  <TableCell className="text-center">{member.name}</TableCell>
+                  <TableCell className="text-center">{member.email}</TableCell>
+                  <TableCell className="text-center">{member.phone}</TableCell>
+                  <TableCell className="text-center">{member.birthday}</TableCell>
+                  <TableCell className="text-center">
+                    {new Date(member.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                       variant="ghost"
+                      size="icon"
+                      
+                      onClick={() => handleViewMember(member)} // 點擊檢視按鈕
+                    >
+                      <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21.1303 10.253C22.2899 11.4731 22.2899 13.3267 21.1303 14.5468C19.1745 16.6046 15.8155 19.3999 12 19.3999C8.18448 19.3999 4.82549 16.6046 2.86971 14.5468C1.7101 13.3267 1.7101 11.4731 2.86971 10.253C4.82549 8.19524 8.18448 5.3999 12 5.3999C15.8155 5.3999 19.1745 8.19523 21.1303 10.253Z" stroke="#484848" strokeWidth="1.5"></path>
+                        <path d="M15 12.3999C15 14.0568 13.6569 15.3999 12 15.3999C10.3431 15.3999 9 14.0568 9 12.3999C9 10.743 10.3431 9.3999 12 9.3999C13.6569 9.3999 15 10.743 15 12.3999Z" stroke="#484848" strokeWidth="1.5"></path>
+                      </svg>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan="7" className="text-center py-4">
+                  無會員資料
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan="7" className="text-center py-4">
-                無會員資料
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex justify-center items-center gap-4 mt-4">
+        <div className="flex items-center gap-2">
+          <span>每頁顯示：</span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={(value) => {
+              setItemsPerPage(Number(value));
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="選擇數量" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10筆</SelectItem>
+              <SelectItem value="20">20筆</SelectItem>
+              <SelectItem value="30">30筆</SelectItem>
+              <SelectItem value="50">50筆</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="flex justify-center mt-4">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="mr-2 bg-brandBlue-normal text-white"
-        >
-          上一頁
-        </Button>
-        <span className="px-4 py-2 border rounded-lg">
-          {currentPage} / {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="ml-2 bg-brandBlue-normal text-white"
-        >
-          下一頁
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            上一頁
+          </Button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              onClick={() => setCurrentPage(page)}
+              className="min-w-[40px]"
+            >
+              {page}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            下一頁
+          </Button>
+        </div>
       </div>
       {/* 會員詳細資料 Modal */}
       {showModal && selectedMember && (
