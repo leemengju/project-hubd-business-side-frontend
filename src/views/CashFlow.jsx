@@ -215,9 +215,18 @@ const CashFlow = () => {
       const formattedDate = format(new Date(date), 'yyyy-MM-dd');
       const response = await apiService.get(`/transactions/daily/${formattedDate}`);
       
+      // 確保有效數據格式
+      const transactions = response.data.transactions || [];
+      
+      // 設置對帳狀態
+      const data = {
+        ...response.data,
+        reconciliation_status: response.data.stats?.reconciliation_status || ''
+      };
+      
       setDetailDate(date);
-      setDayTransactions(response.data.transactions || []);
-      setDailyData(response.data);
+      setDayTransactions(transactions);
+      setDailyData(data);
       setShowDetail(true);
     } catch (error) {
       console.error("獲取日交易詳情失敗:", error);
@@ -503,8 +512,11 @@ const CashFlow = () => {
   const renderDailyDetailModal = () => {
     if (!showDetail) return null;
 
-    const isReconciled = dailyData?.reconciliation_status === 'completed' || dailyData?.reconciliation_status === 'normal' || dailyData?.reconciliation_status === 'abnormal';
-    const reconciliationNotes = dailyData?.reconciliation_notes || '';
+    // 使用top-level和stats都可能存在的對帳狀態
+    const reconciliationStatus = dailyData?.reconciliation_status || '';
+    
+    const isReconciled = reconciliationStatus === 'completed' || reconciliationStatus === 'normal' || reconciliationStatus === 'abnormal';
+    const reconciliationNotes = dailyData?.stats?.reconciliation_notes || '';
 
     return (
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
@@ -514,7 +526,7 @@ const CashFlow = () => {
               <CalendarIcon className="h-5 w-5 text-brandBlue-normal" />
               {formatDate(detailDate, false)} 交易明細
               <div className="ml-2">
-                {renderStatusBadge(dailyData?.reconciliation_status)}
+                {renderStatusBadge(reconciliationStatus)}
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -775,9 +787,18 @@ const CashFlow = () => {
     // 查找該日期的交易數據以獲取當前狀態
     const dayData = dailyTransactions.find(day => day.date === date);
     
+    // 格式化狀態值以進行比較
+    const formatStatusValue = (status) => {
+      if (!status) return '';
+      if (status === '1' || status === 'completed' || status === 'normal') return 'normal';
+      if (status === 'abnormal') return 'abnormal';
+      if (status === 'pending') return 'pending';
+      return '';
+    };
+    
     // 設置當前狀態，如果存在則使用現有狀態，否則默認為空（未選擇）
     if (dayData && dayData.reconciliation_status) {
-      setSelectedStatus(dayData.reconciliation_status);
+      setSelectedStatus(formatStatusValue(dayData.reconciliation_status));
       // 如果有備註，也載入備註
       setReconciliationNotes(dayData.reconciliation_notes || '');
     } else {
@@ -803,11 +824,11 @@ const CashFlow = () => {
 
       setIsUpdatingStatus(true);
       
-      console.log('Submitting reconciliation for date:', currentDate, 'status:', selectedStatus, 'notes:', reconciliationNotes);
+      const formattedDate = format(currentDate, 'yyyy-MM-dd');
       
-      // Call API to update reconciliation status
+      // 呼叫API更新對帳狀態
       const response = await apiService.post('/reconciliations/daily', {
-        date: format(currentDate, 'yyyy-MM-dd'),
+        date: formattedDate,
         status: selectedStatus,
         notes: reconciliationNotes
       });
@@ -816,16 +837,32 @@ const CashFlow = () => {
         throw new Error('Failed to update reconciliation status');
       }
       
-      // Close the dialog and refresh data
+      // 關閉對話框
       setShowStatusDialog(false);
       
+      // 顯示成功提示
       toast({
         title: "對帳狀態已更新",
         description: "對帳狀態已成功更新",
       });
       
-      // Refresh daily transactions
+      // 如果詳細頁面開啟，更新當前dailyData的狀態
+      if (showDetail && detailDate && format(detailDate, 'yyyy-MM-dd') === formattedDate) {
+        setDailyData({
+          ...dailyData,
+          reconciliation_status: selectedStatus,
+          stats: {
+            ...dailyData.stats,
+            reconciliation_status: selectedStatus,
+            reconciliation_notes: reconciliationNotes
+          }
+        });
+      }
+      
+      // 重新載入交易數據
       fetchDailyTransactions();
+      fetchReconciliations();
+      fetchStats();
     } catch (error) {
       console.error('Error updating reconciliation status:', error);
       toast({
@@ -844,41 +881,67 @@ const CashFlow = () => {
     let text = '';
     let icon = null;
     
-    // 添加調試
-    console.log("渲染狀態標籤:", status);
+    // 格式化狀態值以確保一致性
+    const normalizedStatus = status ? String(status).toLowerCase().trim() : '';
     
-    switch(status) {
+    switch(normalizedStatus) {
       case 'normal':
+      case '正常':
         className = 'bg-green-100 text-green-800 border-green-300';
         text = '正常';
         icon = <CheckCircleIcon className="h-3 w-3 mr-1" />;
         break;
       case 'abnormal':
+      case '異常':
         className = 'bg-red-100 text-red-800 border-red-300';
         text = '異常';
         icon = <AlertTriangleIcon className="h-3 w-3 mr-1" />;
         break;
       case 'pending':
+      case '待處理':
         className = 'bg-yellow-100 text-yellow-800 border-yellow-300';
         text = '待處理';
         icon = <ClockIcon className="h-3 w-3 mr-1" />;
         break;
-      case 'completed': // 兼容舊數據
+      case 'completed':
+      case '已對帳':
+      case '1': 
         className = 'bg-green-100 text-green-800 border-green-300';
         text = '已對帳';
         icon = <CheckCircleIcon className="h-3 w-3 mr-1" />;
         break;
-      case null:
-      case undefined:
       case '':
+      case 'null':
+      case 'undefined':
+      case '0': 
+      case 'false':
         className = 'bg-gray-100 text-gray-800 border-gray-300';
         text = '未對帳';
         icon = <CircleIcon className="h-3 w-3 mr-1" />;
         break;
       default:
-        className = 'bg-gray-100 text-gray-800 border-gray-300';
-        text = status || '未對帳';
-        icon = <CircleIcon className="h-3 w-3 mr-1" />;
+        // 如果是數字，嘗試將其轉換為對應的狀態
+        if (!isNaN(Number(status))) {
+          const numStatus = Number(status);
+          if (numStatus === 1) {
+            className = 'bg-green-100 text-green-800 border-green-300';
+            text = '已對帳';
+            icon = <CheckCircleIcon className="h-3 w-3 mr-1" />;
+          } else if (numStatus === 0) {
+            className = 'bg-gray-100 text-gray-800 border-gray-300';
+            text = '未對帳';
+            icon = <CircleIcon className="h-3 w-3 mr-1" />;
+          } else {
+            className = 'bg-gray-100 text-gray-800 border-gray-300';
+            text = `狀態(${status})`;
+            icon = <CircleIcon className="h-3 w-3 mr-1" />;
+          }
+        } else {
+          // 其他任何未知狀態
+          className = 'bg-gray-100 text-gray-800 border-gray-300';
+          text = status ? `${status}` : '未對帳';
+          icon = <CircleIcon className="h-3 w-3 mr-1" />;
+        }
     }
     
     return (
