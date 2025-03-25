@@ -771,21 +771,68 @@ const CashFlow = () => {
   
   const openReconciliationDialog = (date) => {
     setCurrentDate(date);
-    setReconciliationNotes('');
-    setSelectedStatus('normal');
+    
+    // 查找該日期的交易數據以獲取當前狀態
+    const dayData = dailyTransactions.find(day => day.date === date);
+    
+    // 設置當前狀態，如果存在則使用現有狀態，否則默認為空（未選擇）
+    if (dayData && dayData.reconciliation_status) {
+      setSelectedStatus(dayData.reconciliation_status);
+      // 如果有備註，也載入備註
+      setReconciliationNotes(dayData.reconciliation_notes || '');
+    } else {
+      // 重置為未選擇狀態
+      setSelectedStatus('');
+      setReconciliationNotes('');
+    }
+    
     setShowStatusDialog(true);
   };
 
   // 處理對帳狀態提交
   const handleSubmitReconciliation = async () => {
-    setIsUpdatingStatus(true);
     try {
-      await handleDailyReconciliation(currentDate, selectedStatus, reconciliationNotes);
+      if (!selectedStatus) {
+        toast({
+          title: "請選擇對帳狀態",
+          description: "請至少選擇一個對帳狀態才能進行提交",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsUpdatingStatus(true);
+      
+      console.log('Submitting reconciliation for date:', currentDate, 'status:', selectedStatus, 'notes:', reconciliationNotes);
+      
+      // Call API to update reconciliation status
+      const response = await apiService.post('/reconciliations/daily', {
+        date: format(currentDate, 'yyyy-MM-dd'),
+        status: selectedStatus,
+        notes: reconciliationNotes
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update reconciliation status');
+      }
+      
+      // Close the dialog and refresh data
       setShowStatusDialog(false);
-      toast.success(`對帳成功 - 已標記為${selectedStatus === 'normal' ? '正常' : selectedStatus === 'abnormal' ? '異常' : '待處理'}`);
+      
+      toast({
+        title: "對帳狀態已更新",
+        description: "對帳狀態已成功更新",
+      });
+      
+      // Refresh daily transactions
+      fetchDailyTransactions();
     } catch (error) {
-      console.error("對帳提交失敗:", error);
-      toast.error("對帳提交失敗，請稍後再試");
+      console.error('Error updating reconciliation status:', error);
+      toast({
+        title: "更新失敗",
+        description: "無法更新對帳狀態，請稍後再試",
+        variant: "destructive",
+      });
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -1249,68 +1296,98 @@ const CashFlow = () => {
 
       {/* 添加對帳狀態選擇對話框 */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardCheckIcon className="h-5 w-5 text-brandBlue-normal" />
-              選擇對帳狀態
-            </DialogTitle>
-            <DialogDescription>
-              請選擇該日期交易的對帳狀態並添加備註
-            </DialogDescription>
+        <DialogContent>
+          <DialogHeader className="flex flex-row items-center gap-2 pb-2 border-b">
+            <CalendarIcon className="h-5 w-5 text-brandBlue-normal" />
+            <DialogTitle>設定對帳狀態</DialogTitle>
           </DialogHeader>
           
-          <div className="grid gap-6 py-4">
-            <RadioGroup defaultValue="normal" value={selectedStatus} onValueChange={setSelectedStatus} className="grid grid-cols-3 gap-4">
-              <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'normal' ? 'bg-green-50 border-green-300 ring-2 ring-green-200' : 'hover:border-brandBlue-light'}`}>
-                <RadioGroupItem value="normal" id="normal" className="sr-only" />
-                <Label htmlFor="normal" className="cursor-pointer text-center">
-                  <CheckCircleIcon className="h-8 w-8 mb-2 mx-auto text-green-500" />
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">正常</span>
-                </Label>
-              </div>
-              <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'abnormal' ? 'bg-red-50 border-red-300 ring-2 ring-red-200' : 'hover:border-brandBlue-light'}`}>
-                <RadioGroupItem value="abnormal" id="abnormal" className="sr-only" />
-                <Label htmlFor="abnormal" className="cursor-pointer text-center">
-                  <AlertTriangleIcon className="h-8 w-8 mb-2 mx-auto text-red-500" />
-                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">異常</span>
-                </Label>
-              </div>
-              <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'pending' ? 'bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200' : 'hover:border-brandBlue-light'}`}>
-                <RadioGroupItem value="pending" id="pending" className="sr-only" />
-                <Label htmlFor="pending" className="cursor-pointer text-center">
-                  <ClockIcon className="h-8 w-8 mb-2 mx-auto text-amber-500" />
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">待處理</span>
-                </Label>
-              </div>
-            </RadioGroup>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center">
+              <span className="text-sm font-medium mr-2">日期：</span>
+              <span className="font-medium text-brandBlue-normal">
+                {currentDate ? formatDate(currentDate, false) : ''}
+              </span>
+            </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="statusNote" className="text-sm font-medium">
-                <span className="flex items-center gap-1">
-                  <FileTextIcon className="h-4 w-4 text-gray-500" />
-                  對帳備註
-                </span>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <ClipboardCheckIcon className="h-4 w-4 text-gray-500" />
+                <span>對帳狀態</span>
+                {!selectedStatus && <span className="text-xs text-red-500 ml-1">*必選</span>}
               </Label>
-              <Textarea 
-                id="statusNote" 
-                placeholder="請輸入對帳備註..."
-                value={reconciliationNotes}
-                onChange={(e) => setReconciliationNotes(e.target.value)}
-                className="min-h-[100px]"
-              />
+              
+              <RadioGroup value={selectedStatus} onValueChange={setSelectedStatus} className="grid grid-cols-3 gap-4">
+                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'normal' ? 'bg-green-50 border-green-300 ring-2 ring-green-200' : 'hover:border-brandBlue-light'}`}>
+                  <RadioGroupItem value="normal" id="normal" className="sr-only" />
+                  <Label htmlFor="normal" className="cursor-pointer text-center">
+                    <CheckCircleIcon className="h-8 w-8 mb-2 mx-auto text-green-500" />
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">正常</span>
+                  </Label>
+                </div>
+                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'abnormal' ? 'bg-red-50 border-red-300 ring-2 ring-red-200' : 'hover:border-brandBlue-light'}`}>
+                  <RadioGroupItem value="abnormal" id="abnormal" className="sr-only" />
+                  <Label htmlFor="abnormal" className="cursor-pointer text-center">
+                    <AlertTriangleIcon className="h-8 w-8 mb-2 mx-auto text-red-500" />
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">異常</span>
+                  </Label>
+                </div>
+                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'pending' ? 'bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200' : 'hover:border-brandBlue-light'}`}>
+                  <RadioGroupItem value="pending" id="pending" className="sr-only" />
+                  <Label htmlFor="pending" className="cursor-pointer text-center">
+                    <ClockIcon className="h-8 w-8 mb-2 mx-auto text-amber-500" />
+                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">待處理</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              {!selectedStatus && (
+                <div className="text-center py-2 px-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex items-center justify-center gap-2 text-yellow-700">
+                    <AlertTriangleIcon className="h-4 w-4" />
+                    <span className="text-sm font-medium">請選擇一個對帳狀態</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="statusNote" className="text-sm font-medium">
+                  <span className="flex items-center gap-1">
+                    <FileTextIcon className="h-4 w-4 text-gray-500" />
+                    對帳備註
+                  </span>
+                </Label>
+                <Textarea 
+                  id="statusNote" 
+                  placeholder="請輸入對帳備註..."
+                  value={reconciliationNotes}
+                  onChange={(e) => setReconciliationNotes(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
             </div>
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowStatusDialog(false)}>取消</Button>
+          <DialogFooter className="flex justify-end gap-2 pt-2 border-t">
+            <Button variant="outline" onClick={() => setShowStatusDialog(false)}>
+              取消
+            </Button>
             <Button 
-              onClick={handleSubmitReconciliation}
-              disabled={isUpdatingStatus}
-              className="flex items-center gap-1"
+              onClick={handleSubmitReconciliation} 
+              disabled={isUpdatingStatus || !selectedStatus}
+              className="flex items-center gap-2"
             >
-              {isUpdatingStatus ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <SaveIcon className="h-4 w-4" />}
-              儲存變更
+              {isUpdatingStatus ? (
+                <>
+                  <Loader2Icon className="h-4 w-4 animate-spin" />
+                  處理中...
+                </>
+              ) : (
+                <>
+                  <SaveIcon className="h-4 w-4" />
+                  儲存變更
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
