@@ -765,52 +765,71 @@ const CashFlow = () => {
   const [selectedStatus, setSelectedStatus] = useState('normal');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
-  const openReconciliationDialog = (date) => {
-    setCurrentDate(date);
-    
-    // 查找該日期的交易數據以獲取當前狀態
-    let status = '';
-    let notes = '';
-    
-    // 優先使用當前詳情頁面的數據（如果已打開）
-    if (showDetail && detailDate && format(detailDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')) {
-      status = dailyData?.reconciliation_status;
-      notes = dailyData?.stats?.reconciliation_notes || '';
-    } else {
-      // 否則從交易列表中查找
-      const dayData = dailyTransactions.find(day => {
-        if (!day.date) return false;
-        return format(new Date(day.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-      });
+  const openReconciliationDialog = async (date) => {
+    try {
+      setCurrentDate(date);
       
-      if (dayData) {
-        status = dayData.reconciliation_status;
-        notes = dayData.reconciliation_notes || '';
+      // 狀態值初始化
+      let status = '';
+      let notes = '';
+      
+      // 優先使用當前詳情頁面的數據（如果已打開）
+      if (showDetail && detailDate && format(detailDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')) {
+        status = dailyData?.reconciliation_status;
+        notes = dailyData?.stats?.reconciliation_notes || '';
+      } else {
+        // 否則從交易列表中查找
+        const dayData = dailyTransactions.find(day => {
+          if (!day.date) return false;
+          return format(new Date(day.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+        });
+        
+        if (dayData) {
+          status = dayData.reconciliation_status;
+          notes = dayData.reconciliation_notes || '';
+        } else {
+          // 如果在本地數據中找不到，則從API獲取
+          const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+          const response = await apiService.get(`/transactions/daily/${formattedDate}`);
+          
+          if (response.data && response.data.stats) {
+            status = response.data.stats.reconciliation_status || '';
+            notes = response.data.stats.reconciliation_notes || '';
+          }
+        }
       }
+      
+      // 格式化狀態值以進行比較
+      const formatStatusValue = (status) => {
+        if (!status) return '';
+        
+        const normalizedStatus = String(status).toLowerCase().trim();
+        if (normalizedStatus === '1' || normalizedStatus === 'completed' || normalizedStatus === 'normal') 
+          return 'normal';
+        if (normalizedStatus === 'abnormal') 
+          return 'abnormal';
+        if (normalizedStatus === 'pending') 
+          return 'pending';
+        
+        return '';
+      };
+      
+      // 設置當前狀態
+      const formattedStatus = formatStatusValue(status);
+      setSelectedStatus(formattedStatus);
+      setReconciliationNotes(notes);
+      
+      // 打開對話框
+      setShowStatusDialog(true);
+    } catch (error) {
+      console.error("獲取對帳狀態失敗:", error);
+      toast.error("無法獲取對帳狀態，請稍後再試");
+      
+      // 即使出錯，仍然打開對話框，默認為未選擇狀態
+      setSelectedStatus('');
+      setReconciliationNotes('');
+      setShowStatusDialog(true);
     }
-    
-    // 格式化狀態值以進行比較
-    const formatStatusValue = (status) => {
-      if (!status) return '';
-      
-      const normalizedStatus = String(status).toLowerCase().trim();
-      if (normalizedStatus === '1' || normalizedStatus === 'completed' || normalizedStatus === 'normal') 
-        return 'normal';
-      if (normalizedStatus === 'abnormal') 
-        return 'abnormal';
-      if (normalizedStatus === 'pending') 
-        return 'pending';
-      
-      return '';
-    };
-    
-    // 設置當前狀態
-    const formattedStatus = formatStatusValue(status);
-    setSelectedStatus(formattedStatus);
-    setReconciliationNotes(notes);
-    
-    // 打開對話框
-    setShowStatusDialog(true);
   };
 
   // 處理對帳狀態提交
@@ -849,7 +868,8 @@ const CashFlow = () => {
         description: "對帳狀態已成功更新",
       });
       
-      // 如果詳細頁面開啟，更新當前dailyData的狀態
+      // 更新本地狀態
+      // 1. 如果詳細頁面開啟，更新當前dailyData的狀態
       if (showDetail && detailDate && format(detailDate, 'yyyy-MM-dd') === formattedDate) {
         setDailyData({
           ...dailyData,
@@ -862,7 +882,19 @@ const CashFlow = () => {
         });
       }
       
-      // 重新載入交易數據
+      // 2. 更新每日交易列表中的狀態
+      setDailyTransactions(dailyTransactions.map(day => {
+        if (day.date && format(new Date(day.date), 'yyyy-MM-dd') === formattedDate) {
+          return {
+            ...day,
+            reconciliation_status: selectedStatus,
+            reconciliation_notes: reconciliationNotes
+          };
+        }
+        return day;
+      }));
+      
+      // 重新載入交易數據和對帳記錄
       fetchDailyTransactions();
       fetchReconciliations();
       fetchStats();
@@ -1344,12 +1376,8 @@ const CashFlow = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // 首先進入詳情頁面
-                              handleDateClick(reconciliation.reconciliation_date);
-                              // 然後打開對帳對話框（稍後執行以確保詳情頁面已加載）
-                              setTimeout(() => {
-                                openReconciliationDialog(reconciliation.reconciliation_date);
-                              }, 300);
+                              // 直接打開對帳對話框，無需先打開明細頁面
+                              openReconciliationDialog(reconciliation.reconciliation_date);
                             }}
                             className="h-8"
                           >
