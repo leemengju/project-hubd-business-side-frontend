@@ -110,8 +110,29 @@ const CashFlow = () => {
         end_date: format(dateRange.endDate, 'yyyy-MM-dd')
       };
       
+      console.log("發送日期範圍參數:", params);
+      
       const response = await apiService.get("/transactions/daily-summary", { params });
-      setDailyTransactions(response.data || []);
+      console.log("每日交易API響應:", response.data);
+      
+      // 確認數據是否在選定的日期範圍內
+      const startDateObj = new Date(dateRange.startDate);
+      startDateObj.setHours(0, 0, 0, 0);
+      
+      const endDateObj = new Date(dateRange.endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      
+      // 過濾響應數據，確保日期在範圍內
+      const filteredTransactions = response.data.filter(day => {
+        const dayDate = new Date(day.date);
+        return dayDate >= startDateObj && dayDate <= endDateObj;
+      });
+      
+      if (filteredTransactions.length !== response.data.length) {
+        console.warn(`篩選前有 ${response.data.length} 條記錄，篩選後有 ${filteredTransactions.length} 條記錄`);
+      }
+      
+      setDailyTransactions(filteredTransactions || []);
     } catch (error) {
       console.error("獲取每日交易列表失敗:", error);
       if (error.code === 'ERR_NETWORK') {
@@ -132,8 +153,29 @@ const CashFlow = () => {
         end_date: format(dateRange.endDate, 'yyyy-MM-dd')
       };
       
+      console.log("對帳記錄 - 發送日期範圍參數:", params);
+      
       const response = await apiService.get("/reconciliations", { params });
-      setReconciliations(response.data || []);
+      console.log("對帳記錄 - API響應:", response.data);
+      
+      // 確認數據是否在選定的日期範圍內
+      const startDateObj = new Date(dateRange.startDate);
+      startDateObj.setHours(0, 0, 0, 0);
+      
+      const endDateObj = new Date(dateRange.endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      
+      // 過濾響應數據，確保日期在範圍內
+      const filteredReconciliations = response.data.filter(record => {
+        const recordDate = new Date(record.reconciliation_date);
+        return recordDate >= startDateObj && recordDate <= endDateObj;
+      });
+      
+      if (filteredReconciliations.length !== response.data.length) {
+        console.warn(`對帳記錄 - 篩選前有 ${response.data.length} 條記錄，篩選後有 ${filteredReconciliations.length} 條記錄`);
+      }
+      
+      setReconciliations(filteredReconciliations || []);
     } catch (error) {
       console.error("獲取對帳列表失敗:", error);
       toast.error("無法獲取對帳列表，請稍後再試");
@@ -144,7 +186,12 @@ const CashFlow = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await apiService.get("/payments/dashboard");
+      const params = {
+        start_date: format(dateRange.startDate, 'yyyy-MM-dd'),
+        end_date: format(dateRange.endDate, 'yyyy-MM-dd')
+      };
+      
+      const response = await apiService.get("/payments/dashboard", { params });
       console.log("Dashboard API response:", response.data); // 添加日誌輸出
       setStats({
         totalSales: response.data.stats.total_sales || 0,
@@ -358,10 +405,18 @@ const CashFlow = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setDateRange({
+                  const newDateRange = {
                     startDate: startOfMonth(today),
                     endDate: endOfMonth(today)
-                  });
+                  };
+                  setDateRange(newDateRange);
+                  
+                  // 立即使用新的日期範圍獲取數據
+                  setTimeout(() => {
+                    fetchDailyTransactions();
+                    fetchReconciliations();
+                    fetchStats();
+                  }, 100);
                 }}
               >
                 本月
@@ -372,10 +427,18 @@ const CashFlow = () => {
                 onClick={() => {
                   const lastMonthStart = startOfMonth(subDays(today, 30));
                   const lastMonthEnd = endOfMonth(lastMonthStart);
-                  setDateRange({
+                  const newDateRange = {
                     startDate: lastMonthStart,
                     endDate: lastMonthEnd
-                  });
+                  };
+                  setDateRange(newDateRange);
+                  
+                  // 立即使用新的日期範圍獲取數據
+                  setTimeout(() => {
+                    fetchDailyTransactions();
+                    fetchReconciliations();
+                    fetchStats();
+                  }, 100);
                 }}
               >
                 上個月
@@ -384,10 +447,18 @@ const CashFlow = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setDateRange({
+                  const newDateRange = {
                     startDate: subDays(today, 7),
                     endDate: today
-                  });
+                  };
+                  setDateRange(newDateRange);
+                  
+                  // 立即使用新的日期範圍獲取數據
+                  setTimeout(() => {
+                    fetchDailyTransactions();
+                    fetchReconciliations();
+                    fetchStats();
+                  }, 100);
                 }}
               >
                 最近7天
@@ -399,6 +470,7 @@ const CashFlow = () => {
                 setIsDatePickerOpen(false);
                 fetchDailyTransactions();
                 fetchReconciliations();
+                fetchStats();
               }}
             >
               套用篩選
