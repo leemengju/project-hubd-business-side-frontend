@@ -87,6 +87,10 @@ const CashFlow = () => {
     startDate: startOfMonth(today),
     endDate: endOfMonth(today)
   });
+  const [tempDateRange, setTempDateRange] = useState({
+    startDate: startOfMonth(today),
+    endDate: endOfMonth(today)
+  });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // 获取交易列表
@@ -102,7 +106,7 @@ const CashFlow = () => {
   // 获取金流统计数据
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [dateRange]);
 
   const fetchDailyTransactions = async () => {
     setIsLoading(true);
@@ -112,10 +116,7 @@ const CashFlow = () => {
         end_date: format(dateRange.endDate, 'yyyy-MM-dd')
       };
       
-      console.log("發送日期範圍參數:", params);
-      
       const response = await apiService.get("/transactions/daily-summary", { params });
-      console.log("每日交易API響應:", response.data);
       
       // 確認數據是否在選定的日期範圍內
       const startDateObj = new Date(dateRange.startDate);
@@ -129,10 +130,6 @@ const CashFlow = () => {
         const dayDate = new Date(day.date);
         return dayDate >= startDateObj && dayDate <= endDateObj;
       });
-      
-      if (filteredTransactions.length !== response.data.length) {
-        console.warn(`篩選前有 ${response.data.length} 條記錄，篩選後有 ${filteredTransactions.length} 條記錄`);
-      }
       
       setDailyTransactions(filteredTransactions || []);
     } catch (error) {
@@ -155,10 +152,7 @@ const CashFlow = () => {
         end_date: format(dateRange.endDate, 'yyyy-MM-dd')
       };
       
-      console.log("對帳記錄 - 發送日期範圍參數:", params);
-      
       const response = await apiService.get("/reconciliations", { params });
-      console.log("對帳記錄 - API響應:", response.data);
       
       // 確認數據是否在選定的日期範圍內
       const startDateObj = new Date(dateRange.startDate);
@@ -172,10 +166,6 @@ const CashFlow = () => {
         const recordDate = new Date(record.reconciliation_date);
         return recordDate >= startDateObj && recordDate <= endDateObj;
       });
-      
-      if (filteredReconciliations.length !== response.data.length) {
-        console.warn(`對帳記錄 - 篩選前有 ${response.data.length} 條記錄，篩選後有 ${filteredReconciliations.length} 條記錄`);
-      }
       
       setReconciliations(filteredReconciliations || []);
     } catch (error) {
@@ -194,7 +184,6 @@ const CashFlow = () => {
       };
       
       const response = await apiService.get("/payments/dashboard", { params });
-      console.log("Dashboard API response:", response.data); // 添加日誌輸出
       setStats({
         totalSales: response.data.stats.total_sales || 0,
         transactionCount: response.data.stats.transaction_count || 0,
@@ -363,7 +352,13 @@ const CashFlow = () => {
   // 渲染日期範圍選擇器
   const renderDateRangePicker = () => {
     return (
-      <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+      <Popover open={isDatePickerOpen} onOpenChange={(open) => {
+        // 打開時，將當前dateRange複製到tempDateRange
+        if (open) {
+          setTempDateRange({...dateRange});
+        }
+        setIsDatePickerOpen(open);
+      }}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -385,10 +380,10 @@ const CashFlow = () => {
                 <div className="text-sm font-medium mr-2">開始日期</div>
                 <Input
                   type="date"
-                  value={format(dateRange.startDate, 'yyyy-MM-dd')}
+                  value={format(tempDateRange.startDate, 'yyyy-MM-dd')}
                   onChange={(e) => {
-                    setDateRange({
-                      ...dateRange,
+                    setTempDateRange({
+                      ...tempDateRange,
                       startDate: new Date(e.target.value)
                     });
                   }}
@@ -399,10 +394,10 @@ const CashFlow = () => {
                 <div className="text-sm font-medium mr-2">結束日期</div>
                 <Input
                   type="date"
-                  value={format(dateRange.endDate, 'yyyy-MM-dd')}
+                  value={format(tempDateRange.endDate, 'yyyy-MM-dd')}
                   onChange={(e) => {
-                    setDateRange({
-                      ...dateRange,
+                    setTempDateRange({
+                      ...tempDateRange,
                       endDate: new Date(e.target.value)
                     });
                   }}
@@ -420,14 +415,7 @@ const CashFlow = () => {
                     startDate: startOfMonth(today),
                     endDate: endOfMonth(today)
                   };
-                  setDateRange(newDateRange);
-                  
-                  // 立即使用新的日期範圍獲取數據
-                  setTimeout(() => {
-                    fetchDailyTransactions();
-                    fetchReconciliations();
-                    fetchStats();
-                  }, 100);
+                  setTempDateRange(newDateRange);
                 }}
               >
                 本月
@@ -442,14 +430,7 @@ const CashFlow = () => {
                     startDate: lastMonthStart,
                     endDate: lastMonthEnd
                   };
-                  setDateRange(newDateRange);
-                  
-                  // 立即使用新的日期範圍獲取數據
-                  setTimeout(() => {
-                    fetchDailyTransactions();
-                    fetchReconciliations();
-                    fetchStats();
-                  }, 100);
+                  setTempDateRange(newDateRange);
                 }}
               >
                 上個月
@@ -462,14 +443,7 @@ const CashFlow = () => {
                     startDate: subDays(today, 7),
                     endDate: today
                   };
-                  setDateRange(newDateRange);
-                  
-                  // 立即使用新的日期範圍獲取數據
-                  setTimeout(() => {
-                    fetchDailyTransactions();
-                    fetchReconciliations();
-                    fetchStats();
-                  }, 100);
+                  setTempDateRange(newDateRange);
                 }}
               >
                 最近7天
@@ -478,10 +452,9 @@ const CashFlow = () => {
             
             <Button
               onClick={() => {
+                // 應用選擇的日期範圍
+                setDateRange(tempDateRange);
                 setIsDatePickerOpen(false);
-                fetchDailyTransactions();
-                fetchReconciliations();
-                fetchStats();
               }}
             >
               套用篩選
@@ -1158,7 +1131,11 @@ const CashFlow = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchDailyTransactions}
+            onClick={() => {
+              fetchDailyTransactions();
+              fetchReconciliations();
+              fetchStats();
+            }}
             className="flex items-center gap-1"
           >
             <RefreshCwIcon className="h-4 w-4" />
