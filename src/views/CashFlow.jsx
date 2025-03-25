@@ -26,7 +26,19 @@ import {
   ChevronRightIcon,
   Loader2Icon,
   Settings2Icon,
-  ClockIcon
+  ClockIcon,
+  DollarSignIcon,
+  PercentIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+  ClipboardListIcon,
+  ShoppingBagIcon,
+  ShoppingCartIcon,
+  ActivityIcon,
+  HashIcon,
+  ClipboardCheckIcon,
+  AlertTriangleIcon,
+  SaveIcon
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -423,9 +435,10 @@ const CashFlow = () => {
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-brandBlue-normal" />
               {formatDate(detailDate, false)} 交易明細
-              <div className="mt-1">
+              <div className="ml-2">
                 {renderStatusBadge(dailyData?.reconciliation_status)}
               </div>
             </DialogTitle>
@@ -433,39 +446,70 @@ const CashFlow = () => {
 
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <Loader2Icon className="h-8 w-8 animate-spin text-gray-500" />
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brandBlue-normal"></div>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">交易總筆數</h3>
-                  <p className="text-2xl font-bold">{dailyData?.stats?.transaction_count || 0} 筆</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">交易筆數</p>
+                      <h4 className="text-2xl font-semibold mt-1">{dailyData?.stats?.transaction_count || 0} 筆</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <ClipboardListIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">交易總金額</h3>
-                  <p className="text-2xl font-bold text-blue-600">{formatAmount(dailyData?.stats?.total_amount || 0)}</p>
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">交易總額</p>
+                      <h4 className="text-2xl font-semibold mt-1">{formatAmount(dailyData?.stats?.total_amount || 0)}</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <DollarSignIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">手續費總額</h3>
-                  <p className="text-2xl font-bold text-red-600">{formatAmount(dailyData?.stats?.total_fee || 0)}</p>
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">手續費總額</p>
+                      <h4 className="text-2xl font-semibold mt-1">{formatAmount(dailyData?.stats?.total_fee || 0)}</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <PercentIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">淨收入</h3>
-                  <p className="text-2xl font-bold text-green-600">{formatAmount(dailyData?.stats?.total_net_amount || 0)}</p>
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">淨收入</p>
+                      <h4 className="text-2xl font-semibold mt-1">{formatAmount(dailyData?.stats?.total_net_amount || 0)}</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <TrendingUpIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {reconciliationNotes && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-blue-700 mb-2">對帳備註</h3>
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2 text-blue-700 mb-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    <h3 className="text-sm font-medium">對帳備註</h3>
+                  </div>
                   <p className="text-gray-700">{reconciliationNotes}</p>
                 </div>
               )}
 
-              <div className="border rounded-lg overflow-hidden">
+              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -491,7 +535,7 @@ const CashFlow = () => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200">
                       {dailyData?.transactions && dailyData.transactions.length > 0 ? 
                         dailyData.transactions.map((transaction) => (
                           <tr key={`trans-${transaction.id}`} className="hover:bg-gray-50">
@@ -546,8 +590,8 @@ const CashFlow = () => {
               </div>
 
               {!isReconciled && (
-                <div className="pt-4 border-t flex justify-end">
-                  <Button onClick={() => openReconciliationDialog(detailDate)}>
+                <div className="pt-6 mt-6 border-t flex justify-end">
+                  <Button onClick={() => openReconciliationDialog(detailDate)} variant="default">
                     <CheckCircleIcon className="h-4 w-4 mr-2" />
                     標記為已對帳
                   </Button>
@@ -560,84 +604,86 @@ const CashFlow = () => {
     );
   };
 
-  // 渲染金流統計卡片
+  // 渲染統計卡片
   const renderStatsCards = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* 總交易金額 */}
-        <div className="bg-white rounded-lg shadow p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {/* 總交易額 */}
+        <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">總交易金額</p>
-              <h3 className="text-2xl font-bold mt-1">{formatAmount(stats.totalSales)}</h3>
+              <p className="text-xs font-medium text-gray-500 uppercase">總交易額</p>
+              <h4 className="text-2xl font-semibold mt-1">
+                {isLoading ? (
+                  <div className="w-20 h-7 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <span>{formatAmount(stats.totalSales || 0)}</span>
+                )}
+              </h4>
             </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <CoinsIcon className="h-6 w-6 text-blue-600" />
+            <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+              <DollarSignIcon className="h-6 w-6 text-brandBlue-normal" />
             </div>
           </div>
         </div>
 
         {/* 交易筆數 */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">交易筆數</p>
-              <h3 className="text-2xl font-bold mt-1">{stats.transactionCount}</h3>
+              <p className="text-xs font-medium text-gray-500 uppercase">交易筆數</p>
+              <h4 className="text-2xl font-semibold mt-1">
+                {isLoading ? (
+                  <div className="w-16 h-7 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <span>{stats.transactionCount || 0} 筆</span>
+                )}
+              </h4>
             </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <FileTextIcon className="h-6 w-6 text-green-600" />
+            <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+              <ClipboardListIcon className="h-6 w-6 text-brandBlue-normal" />
             </div>
           </div>
         </div>
 
-        {/* 手續費 */}
-        <div className="bg-white rounded-lg shadow p-4">
+        {/* 平均客單價 */}
+        <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">手續費</p>
-              <h3 className="text-2xl font-bold mt-1">{formatAmount(stats.totalFees)}</h3>
+              <p className="text-xs font-medium text-gray-500 uppercase">平均客單價</p>
+              <h4 className="text-2xl font-semibold mt-1">
+                {isLoading ? (
+                  <div className="w-20 h-7 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <span>
+                    {stats.transactionCount
+                      ? formatAmount(stats.totalSales / stats.transactionCount)
+                      : formatAmount(0)}
+                  </span>
+                )}
+              </h4>
             </div>
-            <div className="bg-yellow-100 p-3 rounded-full">
-              <ReceiptIcon className="h-6 w-6 text-yellow-600" />
+            <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+              <ReceiptIcon className="h-6 w-6 text-brandBlue-normal" />
             </div>
           </div>
         </div>
 
-        {/* 淨收入 */}
-        <div className="bg-white rounded-lg shadow p-4">
+        {/* 手續費支出 */}
+        <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">淨收入</p>
-              <h3 className="text-2xl font-bold mt-1">{formatAmount(stats.netIncome)}</h3>
+              <p className="text-xs font-medium text-gray-500 uppercase">手續費支出</p>
+              <h4 className="text-2xl font-semibold mt-1">
+                {isLoading ? (
+                  <div className="w-20 h-7 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <span>{formatAmount(stats.totalFees || 0)}</span>
+                )}
+              </h4>
             </div>
-            <div className="bg-purple-100 p-3 rounded-full">
-              <ArrowUpIcon className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* 待對帳筆數 */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">待對帳筆數</p>
-              <h3 className="text-2xl font-bold mt-1">{stats.pendingReconciliation}</h3>
-            </div>
-            <div className="bg-orange-100 p-3 rounded-full">
-              <ClockIcon className="h-6 w-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* 已對帳筆數 */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">已對帳筆數</p>
-              <h3 className="text-2xl font-bold mt-1">{stats.completedReconciliation}</h3>
-            </div>
-            <div className="bg-teal-100 p-3 rounded-full">
-              <CheckCircleIcon className="h-6 w-6 text-teal-600" />
+            <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+              <PercentIcon className="h-6 w-6 text-brandBlue-normal" />
             </div>
           </div>
         </div>
@@ -647,15 +693,31 @@ const CashFlow = () => {
 
   // 打開對帳狀態選擇對話框
   const [showStatusDialog, setShowStatusDialog] = useState(false);
-  const [reconciliationNoteInput, setReconciliationNoteInput] = useState('');
+  const [reconciliationNotes, setReconciliationNotes] = useState('');
   const [currentDate, setCurrentDate] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('normal');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
   const openReconciliationDialog = (date) => {
     setCurrentDate(date);
-    setReconciliationNoteInput('');
+    setReconciliationNotes('');
     setSelectedStatus('normal');
     setShowStatusDialog(true);
+  };
+
+  // 處理對帳狀態提交
+  const handleSubmitReconciliation = async () => {
+    setIsUpdatingStatus(true);
+    try {
+      await handleDailyReconciliation(currentDate, selectedStatus, reconciliationNotes);
+      setShowStatusDialog(false);
+      toast.success(`對帳成功 - 已標記為${selectedStatus === 'normal' ? '正常' : selectedStatus === 'abnormal' ? '異常' : '待處理'}`);
+    } catch (error) {
+      console.error("對帳提交失敗:", error);
+      toast.error("對帳提交失敗，請稍後再試");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   // 渲染狀態標籤
@@ -700,7 +762,8 @@ const CashFlow = () => {
       <Dialog open={showOrderDetail} onOpenChange={setShowOrderDetail}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <ShoppingBagIcon className="h-5 w-5 text-brandBlue-normal" />
               訂單詳情 #{currentOrder.order_id}
             </DialogTitle>
             <DialogDescription>
@@ -710,45 +773,81 @@ const CashFlow = () => {
 
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <Loader2Icon className="h-8 w-8 animate-spin text-gray-500" />
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brandBlue-normal"></div>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">訂單金額</h3>
-                  <p className="text-2xl font-bold text-blue-600">{formatAmount(currentOrder.total_price_with_discount)}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">訂單金額</p>
+                      <h4 className="text-2xl font-semibold mt-1">{formatAmount(currentOrder.total_price_with_discount)}</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <DollarSignIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">支付方式</h3>
-                  <p className="text-xl font-semibold flex items-center">
-                    {getPaymentMethodIcon(currentOrder.payment_type)}
-                    <span className="ml-2">{currentOrder.payment_type}</span>
-                  </p>
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">支付方式</p>
+                      <h4 className="text-xl font-semibold mt-1 flex items-center">
+                        {getPaymentMethodIcon(currentOrder.payment_type)}
+                        <span className="ml-2">{currentOrder.payment_type}</span>
+                      </h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <CreditCardIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">交易狀態</h3>
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyles(currentOrder.trade_status)}`}>
-                    {currentOrder.trade_status}
-                  </span>
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">交易狀態</p>
+                      <h4 className="text-xl font-semibold mt-1">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyles(currentOrder.trade_status)}`}>
+                          {currentOrder.trade_status}
+                        </span>
+                      </h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <ActivityIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">交易編號</h3>
-                  <p className="font-mono text-gray-700">{currentOrder.trade_No}</p>
+                <div className="bg-white border rounded-lg p-4 hover:border-brandBlue-light transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">交易編號</p>
+                      <h4 className="text-sm font-mono font-semibold mt-1 truncate">{currentOrder.trade_No}</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-brandBlue-ultraLight rounded-full flex items-center justify-center">
+                      <HashIcon className="h-6 w-6 text-brandBlue-normal" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {currentOrder.notes && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-blue-700 mb-2">交易備註</h3>
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2 text-blue-700 mb-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    <h3 className="text-sm font-medium">交易備註</h3>
+                  </div>
                   <p className="text-gray-700">{currentOrder.notes}</p>
                 </div>
               )}
 
-              <div className="border rounded-lg overflow-hidden mb-6">
-                <h3 className="px-6 py-3 bg-gray-50 font-medium">訂單項目</h3>
+              <div className="bg-white rounded-lg border shadow-sm overflow-hidden mb-6">
+                <div className="px-6 py-3 bg-gray-50 font-medium flex items-center">
+                  <ShoppingCartIcon className="h-4 w-4 mr-2 text-gray-500" />
+                  <h3>訂單項目</h3>
+                </div>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商品名稱</th>
@@ -759,10 +858,10 @@ const CashFlow = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">小計</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200">
                       {currentOrder.order_items && currentOrder.order_items.length > 0 ? (
                         currentOrder.order_items.map((item, index) => (
-                          <tr key={`item-${index}`}>
+                          <tr key={`item-${index}`} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className="text-sm font-medium text-gray-900">{item.product_name}</span>
                             </td>
@@ -785,10 +884,13 @@ const CashFlow = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-500">訂單成立時間: {formatDate(currentOrder.created_at)}</p>
+              <div className="flex justify-between items-center pt-4 border-t">
+                <div className="text-sm text-gray-500 flex items-center">
+                  <ClockIcon className="h-4 w-4 mr-1 text-gray-400" />
+                  訂單成立時間: {formatDate(currentOrder.created_at)}
+                </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold">總金額: <span className="text-blue-600">{formatAmount(currentOrder.total_price_with_discount)}</span></p>
+                  <p className="text-lg font-semibold">總金額: <span className="text-brandBlue-normal">{formatAmount(currentOrder.total_price_with_discount)}</span></p>
                 </div>
               </div>
             </>
@@ -813,44 +915,40 @@ const CashFlow = () => {
   };
 
   return (
-    <section className="w-full h-full bg-white p-6 rounded-lg shadow-sm overflow-y-auto">
-      {/* 頁面標題和右側添加設定按鈕 */}
+    <section className="w-full h-full bg-white p-6 overflow-y-auto">
+      {/* 頁面標題 */}
       <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
-            <div className="my-auto">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="25"
-                height="25"
-                viewBox="0 0 20 20"
-                className="text-brandBlue-normal"
+        <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
+          <div className="my-auto">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="25"
+              height="25"
+              viewBox="0 0 24 24"
+              className="text-brandBlue-normal"
+            >
+              <g
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                color="currentColor"
               >
-                <path
-                  fill="currentColor"
-                  d="M10 20a10 10 0 1 1 0-20a10 10 0 0 1 0 20m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m-1-7.59V4h2v5.59l3.95 3.95l-1.41 1.41L9 10.41l-3.54 3.54l-1.41-1.41L8 8.59"
-                />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
-                金流管理
-              </h1>
-              <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
-            </div>
+                <path d="M20.943 16.835a15.76 15.76 0 0 0-4.476-8.616c-.517-.503-.775-.754-1.346-.986C14.55 7 14.059 7 13.078 7h-2.156c-.981 0-1.472 0-2.043.233c-.57.232-.83.483-1.346.986a15.76 15.76 0 0 0-4.476 8.616C2.57 19.773 5.28 22 8.308 22h7.384c3.029 0 5.74-2.227 5.25-5.165" />
+                <path d="M7.257 4.443c-.207-.3-.506-.708.112-.8c.635-.096 1.294.338 1.94.33c.583-.009.88-.268 1.2-.638C10.845 2.946 11.365 2 12 2s1.155.946 1.491 1.335c.32.37.617.63 1.2.637c.646.01 1.305-.425 1.94-.33c.618.093.319.5.112.8l-.932 1.359c-.4.58-.599.87-1.017 1.035S13.837 7 12.758 7h-1.516c-1.08 0-1.619 0-2.036-.164S8.589 6.38 8.189 5.8zm6.37 8.476c-.216-.799-1.317-1.519-2.638-.98s-1.53 2.272.467 2.457c.904.083 1.492-.097 2.031.412c.54.508.64 1.923-.739 2.304c-1.377.381-2.742-.214-2.89-1.06m1.984-5.06v.761m0 5.476v.764" />
+              </g>
+            </svg>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={() => handleTabChange("settings")}
-          >
-            <Settings2Icon className="h-4 w-4" />
-            金流設定
-          </Button>
+          <div>
+            <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
+              金流管理
+            </h1>
+            <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
+          </div>
         </div>
       </div>
-
+      
       {/* 统计卡片 */}
       {renderStatsCards()}
 
@@ -928,6 +1026,7 @@ const CashFlow = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">手續費</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">淨收入</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">對帳狀態</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">備註</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">查看</th>
                   </tr>
                 </thead>
@@ -978,13 +1077,13 @@ const CashFlow = () => {
         </TabsContent>
 
         <TabsContent value="reconciliations" className="mt-0">
-          <div className="rounded-md border overflow-x-auto">
+          <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
             {isLoading && activeTab === "reconciliations" ? (
               <div className="flex justify-center items-center h-64">
                 <Loader2Icon className="h-8 w-8 animate-spin text-gray-500" />
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
@@ -1064,51 +1163,67 @@ const CashFlow = () => {
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>選擇對帳狀態</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheckIcon className="h-5 w-5 text-brandBlue-normal" />
+              選擇對帳狀態
+            </DialogTitle>
             <DialogDescription>
               請選擇該日期交易的對帳狀態並添加備註
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             <RadioGroup defaultValue="normal" value={selectedStatus} onValueChange={setSelectedStatus} className="grid grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="normal" id="normal" />
-                <Label htmlFor="normal" className="cursor-pointer">
+              <div className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:border-brandBlue-light cursor-pointer transition-colors">
+                <RadioGroupItem value="normal" id="normal" className="sr-only" />
+                <Label htmlFor="normal" className="cursor-pointer text-center">
+                  <CheckCircleIcon className="h-8 w-8 mb-2 mx-auto text-green-500" />
                   <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">正常</span>
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="abnormal" id="abnormal" />
-                <Label htmlFor="abnormal" className="cursor-pointer">
+              <div className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:border-brandBlue-light cursor-pointer transition-colors">
+                <RadioGroupItem value="abnormal" id="abnormal" className="sr-only" />
+                <Label htmlFor="abnormal" className="cursor-pointer text-center">
+                  <AlertTriangleIcon className="h-8 w-8 mb-2 mx-auto text-red-500" />
                   <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">異常</span>
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="pending" id="pending" />
-                <Label htmlFor="pending" className="cursor-pointer">
+              <div className="flex flex-col items-center gap-2 p-3 border rounded-lg hover:border-brandBlue-light cursor-pointer transition-colors">
+                <RadioGroupItem value="pending" id="pending" className="sr-only" />
+                <Label htmlFor="pending" className="cursor-pointer text-center">
+                  <ClockIcon className="h-8 w-8 mb-2 mx-auto text-amber-500" />
                   <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">待處理</span>
                 </Label>
               </div>
             </RadioGroup>
             
             <div className="grid gap-2">
-              <Label htmlFor="notes">對帳備註</Label>
+              <Label htmlFor="statusNote" className="text-sm font-medium">
+                <span className="flex items-center gap-1">
+                  <FileTextIcon className="h-4 w-4 text-gray-500" />
+                  對帳備註
+                </span>
+              </Label>
               <Textarea 
-                id="notes" 
+                id="statusNote" 
                 placeholder="請輸入對帳備註..."
-                value={reconciliationNoteInput}
-                onChange={(e) => setReconciliationNoteInput(e.target.value)}
+                value={reconciliationNotes}
+                onChange={(e) => setReconciliationNotes(e.target.value)}
+                className="min-h-[100px]"
               />
             </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowStatusDialog(false)}>取消</Button>
-            <Button onClick={() => {
-              handleDailyReconciliation(currentDate, selectedStatus, reconciliationNoteInput);
-              setShowStatusDialog(false);
-            }}>確認對帳</Button>
+            <Button 
+              onClick={handleSubmitReconciliation}
+              disabled={isUpdatingStatus}
+              className="flex items-center gap-1"
+            >
+              {isUpdatingStatus ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <SaveIcon className="h-4 w-4" />}
+              儲存變更
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1120,3 +1235,4 @@ const CashFlow = () => {
 };
 
 export default CashFlow;
+

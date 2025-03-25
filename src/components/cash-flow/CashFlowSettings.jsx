@@ -164,16 +164,7 @@ const CashFlowSettings = () => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings2Icon className="h-6 w-6 text-blue-600" />
-            金流設定
-          </h1>
-          <p className="text-gray-500 mt-1">
-            管理系統支援的第三方支付服務設定
-          </p>
-        </div>
+      <div className="flex justify-end mb-6">
         <Button
           onClick={() => setShowAddDialog(true)}
           className="flex items-center gap-2"

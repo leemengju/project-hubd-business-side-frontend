@@ -9,7 +9,6 @@ const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
 const Products = lazy(() => import("../views/Products"));
 const Store = lazy(() => import("../views/Store"));
 const CashFlow = lazy(() => import("../views/CashFlow"));
-const CashFlowDashboard = lazy(() => import("../views/CashFlowDashboard"));
 const Marketing = lazy(() => import("../views/Marketing"));
 const Order = lazy(() => import("../views/Order"));
 const Setting = lazy(() => import("../views/Setting"));
@@ -39,9 +38,7 @@ const AppRouter = () => {
             <Route path="store" element={<Store />} />
             
             {/* 金流管理相關路由 */}
-            <Route path="cash-flow" element={<CashFlowDashboard />}>
-              <Route index element={<CashFlow />} />
-            </Route>
+            <Route path="cash-flow" element={<CashFlow />} />
             
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
