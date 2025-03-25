@@ -38,12 +38,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import CashFlowChart from "../components/cash-flow/CashFlowChart";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import CashFlowSettings from "../components/cash-flow/CashFlowSettings";
 
 const CashFlow = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [dailyTransactions, setDailyTransactions] = useState([]);
   const [reconciliations, setReconciliations] = useState([]);
-  const [activeTab, setActiveTab] = useState("transactions"); // transactions or reconciliations
+  
+  // 從 URL 查詢參數獲取 tab
+  const queryParams = new URLSearchParams(location.search);
+  const tabParam = queryParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || "transactions"); // transactions, reconciliations, settings
   const [isLoading, setIsLoading] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [detailDate, setDetailDate] = useState(null);
@@ -791,6 +798,20 @@ const CashFlow = () => {
     );
   };
 
+  // 處理 Tab 變更
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    
+    // 更新 URL 中的查詢參數
+    const newSearchParams = new URLSearchParams(location.search);
+    if (value === "transactions") {
+      newSearchParams.delete('tab');
+    } else {
+      newSearchParams.set('tab', value);
+    }
+    navigate({ search: newSearchParams.toString() }, { replace: true });
+  };
+
   return (
     <section className="w-full h-full bg-white p-6 rounded-lg shadow-sm overflow-y-auto">
       {/* 頁面標題和右側添加設定按鈕 */}
@@ -818,16 +839,15 @@ const CashFlow = () => {
               <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
             </div>
           </div>
-          <Link to="/cash-flow/settings">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Settings2Icon className="h-4 w-4" />
-              金流設定
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={() => handleTabChange("settings")}
+          >
+            <Settings2Icon className="h-4 w-4" />
+            金流設定
+          </Button>
         </div>
       </div>
 
@@ -865,7 +885,7 @@ const CashFlow = () => {
       <Tabs 
         defaultValue="transactions" 
         value={activeTab} 
-        onValueChange={setActiveTab} 
+        onValueChange={handleTabChange} 
         className="w-full"
       >
         <TabsList className="bg-gray-100 mb-6">
@@ -882,6 +902,13 @@ const CashFlow = () => {
           >
             <FileTextIcon className="h-4 w-4" />
             對帳記錄
+          </TabsTrigger>
+          <TabsTrigger 
+            value="settings" 
+            className="flex items-center gap-2 data-[state=active]:bg-brandBlue-normal data-[state=active]:text-white"
+          >
+            <Settings2Icon className="h-4 w-4" />
+            系統設定
           </TabsTrigger>
         </TabsList>
 
@@ -1023,6 +1050,10 @@ const CashFlow = () => {
               </table>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-0">
+          <CashFlowSettings />
         </TabsContent>
       </Tabs>
 
