@@ -1,7 +1,7 @@
 // lazyloading 圖片懶加載
 // <img src="" alt="" loading="lazy" />
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import apiService from "../services/api";
 import { toast } from "react-hot-toast";
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
@@ -70,6 +70,8 @@ const CashFlow = () => {
   const [detailDate, setDetailDate] = useState(null);
   const [dayTransactions, setDayTransactions] = useState([]);
   const [dailyData, setDailyData] = useState(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const dailyDataCache = useRef({});
   const [stats, setStats] = useState({
     totalSales: 0,
     transactionCount: 0,
@@ -80,6 +82,7 @@ const CashFlow = () => {
   });
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   // 日期篩選
   const today = new Date();
@@ -109,7 +112,10 @@ const CashFlow = () => {
   }, [dateRange]);
 
   const fetchDailyTransactions = async () => {
-    setIsLoading(true);
+    // 使用局部加載狀態來避免整個頁面重新渲染
+    const wasLoading = isLoading;
+    if (!wasLoading) setIsLoading(true);
+    
     try {
       const params = {
         start_date: format(dateRange.startDate, 'yyyy-MM-dd'),
@@ -140,12 +146,15 @@ const CashFlow = () => {
         toast.error("無法獲取交易列表，請稍後再試");
       }
     } finally {
-      setIsLoading(false);
+      if (!wasLoading) setIsLoading(false);
     }
   };
 
   const fetchReconciliations = async () => {
-    setIsLoading(true);
+    // 使用局部加載狀態來避免整個頁面重新渲染
+    const wasLoading = isLoading;
+    if (!wasLoading) setIsLoading(true);
+    
     try {
       const params = {
         start_date: format(dateRange.startDate, 'yyyy-MM-dd'),
@@ -172,7 +181,7 @@ const CashFlow = () => {
       console.error("獲取對帳列表失敗:", error);
       toast.error("無法獲取對帳列表，請稍後再試");
     } finally {
-      setIsLoading(false);
+      if (!wasLoading) setIsLoading(false);
     }
   };
 
@@ -199,9 +208,24 @@ const CashFlow = () => {
 
   // 處理日期點擊，顯示該日詳細交易
   const handleDateClick = async (date) => {
-    setIsLoading(true);
+    // 先設置彈窗狀態，避免設置loading狀態導致頁面閃爍
+    setDetailDate(date);
+    setShowDetail(true);
+    
+    // 檢查是否已經有緩存的數據
+    const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+    const cachedData = dailyDataCache.current[formattedDate];
+    
+    if (cachedData) {
+      // 如果有緩存數據，直接使用
+      setDayTransactions(cachedData.transactions || []);
+      setDailyData(cachedData);
+      return;
+    }
+    
+    // 沒有緩存數據時才顯示加載狀態
+    setIsLoadingDetail(true);
     try {
-      const formattedDate = format(new Date(date), 'yyyy-MM-dd');
       const response = await apiService.get(`/transactions/daily/${formattedDate}`);
       
       // 確保有效數據格式
@@ -213,16 +237,17 @@ const CashFlow = () => {
         reconciliation_status: response.data.stats?.reconciliation_status || ''
       };
       
-      setDetailDate(date);
+      // 保存到緩存
+      dailyDataCache.current[formattedDate] = data;
+      
       setDayTransactions(transactions);
       setDailyData(data);
-      setShowDetail(true);
     } catch (error) {
       console.error("獲取日交易詳情失敗:", error);
       toast.error("無法獲取交易詳情，請稍後再試");
     } finally {
       setIsDatePickerOpen(false);
-      setIsLoading(false);
+      setIsLoadingDetail(false);
     }
   };
 
@@ -467,17 +492,19 @@ const CashFlow = () => {
 
   // 處理點擊交易項目，顯示訂單詳情
   const handleOrderClick = async (orderId) => {
-    setIsLoading(true);
+    // 先打開窗口再加載數據
+    setShowOrderDetail(true);
+    setIsLoadingOrder(true);
+    
     try {
       // 根據訂單 ID 獲取詳細資訊
       const response = await apiService.get(`/transactions/order/${orderId}`);
       setCurrentOrder(response.data);
-      setShowOrderDetail(true);
     } catch (error) {
       console.error("獲取訂單詳情失敗:", error);
       toast.error("無法獲取訂單詳情，請稍後再試");
     } finally {
-      setIsLoading(false);
+      setIsLoadingOrder(false);
     }
   };
 
@@ -504,7 +531,7 @@ const CashFlow = () => {
             </DialogTitle>
           </DialogHeader>
 
-          {isLoading ? (
+          {isLoadingDetail ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brandBlue-normal"></div>
             </div>
@@ -871,7 +898,7 @@ const CashFlow = () => {
       // 更新本地狀態
       // 1. 如果詳細頁面開啟，更新當前dailyData的狀態
       if (showDetail && detailDate && format(detailDate, 'yyyy-MM-dd') === formattedDate) {
-        setDailyData({
+        const updatedData = {
           ...dailyData,
           reconciliation_status: selectedStatus,
           stats: {
@@ -879,7 +906,11 @@ const CashFlow = () => {
             reconciliation_status: selectedStatus,
             reconciliation_notes: reconciliationNotes
           }
-        });
+        };
+        
+        setDailyData(updatedData);
+        // 同時更新緩存
+        dailyDataCache.current[formattedDate] = updatedData;
       }
       
       // 2. 更新每日交易列表中的狀態
@@ -1004,7 +1035,7 @@ const CashFlow = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {isLoading ? (
+          {isLoadingOrder ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brandBlue-normal"></div>
             </div>
