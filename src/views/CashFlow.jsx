@@ -649,14 +649,25 @@ const CashFlow = () => {
                 </div>
               </div>
 
-              {!isReconciled && (
-                <div className="pt-6 mt-6 border-t flex justify-end">
-                  <Button onClick={() => openReconciliationDialog(detailDate)} variant="default">
-                    <CheckCircleIcon className="h-4 w-4 mr-2" />
-                    標記為已對帳
-                  </Button>
-                </div>
-              )}
+              <div className="pt-6 mt-6 border-t flex justify-end">
+                <Button 
+                  onClick={() => openReconciliationDialog(detailDate)} 
+                  variant="default"
+                  className="flex items-center gap-2"
+                >
+                  {isReconciled ? (
+                    <>
+                      <FileTextIcon className="h-4 w-4" />
+                      修改對帳狀態
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-4 w-4" />
+                      設定對帳狀態
+                    </>
+                  )}
+                </Button>
+              </div>
             </>
           )}
         </DialogContent>
@@ -758,28 +769,47 @@ const CashFlow = () => {
     setCurrentDate(date);
     
     // 查找該日期的交易數據以獲取當前狀態
-    const dayData = dailyTransactions.find(day => day.date === date);
+    let status = '';
+    let notes = '';
+    
+    // 優先使用當前詳情頁面的數據（如果已打開）
+    if (showDetail && detailDate && format(detailDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')) {
+      status = dailyData?.reconciliation_status;
+      notes = dailyData?.stats?.reconciliation_notes || '';
+    } else {
+      // 否則從交易列表中查找
+      const dayData = dailyTransactions.find(day => {
+        if (!day.date) return false;
+        return format(new Date(day.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+      });
+      
+      if (dayData) {
+        status = dayData.reconciliation_status;
+        notes = dayData.reconciliation_notes || '';
+      }
+    }
     
     // 格式化狀態值以進行比較
     const formatStatusValue = (status) => {
       if (!status) return '';
-      if (status === '1' || status === 'completed' || status === 'normal') return 'normal';
-      if (status === 'abnormal') return 'abnormal';
-      if (status === 'pending') return 'pending';
+      
+      const normalizedStatus = String(status).toLowerCase().trim();
+      if (normalizedStatus === '1' || normalizedStatus === 'completed' || normalizedStatus === 'normal') 
+        return 'normal';
+      if (normalizedStatus === 'abnormal') 
+        return 'abnormal';
+      if (normalizedStatus === 'pending') 
+        return 'pending';
+      
       return '';
     };
     
-    // 設置當前狀態，如果存在則使用現有狀態，否則默認為空（未選擇）
-    if (dayData && dayData.reconciliation_status) {
-      setSelectedStatus(formatStatusValue(dayData.reconciliation_status));
-      // 如果有備註，也載入備註
-      setReconciliationNotes(dayData.reconciliation_notes || '');
-    } else {
-      // 重置為未選擇狀態
-      setSelectedStatus('');
-      setReconciliationNotes('');
-    }
+    // 設置當前狀態
+    const formattedStatus = formatStatusValue(status);
+    setSelectedStatus(formattedStatus);
+    setReconciliationNotes(notes);
     
+    // 打開對話框
     setShowStatusDialog(true);
   };
 
@@ -1305,10 +1335,26 @@ const CashFlow = () => {
                             variant="ghost" 
                             size="sm" 
                             onClick={() => handleDateClick(reconciliation.reconciliation_date)} 
-                            className="h-8 text-blue-600 hover:text-blue-800"
+                            className="h-8 text-blue-600 hover:text-blue-800 mr-2"
                           >
                             <SearchIcon className="h-4 w-4 mr-1" />
-                            查看
+                            查看明細
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // 首先進入詳情頁面
+                              handleDateClick(reconciliation.reconciliation_date);
+                              // 然後打開對帳對話框（稍後執行以確保詳情頁面已加載）
+                              setTimeout(() => {
+                                openReconciliationDialog(reconciliation.reconciliation_date);
+                              }, 300);
+                            }}
+                            className="h-8"
+                          >
+                            <FileTextIcon className="h-4 w-4 mr-1" />
+                            修改狀態
                           </Button>
                         </td>
                       </tr>
