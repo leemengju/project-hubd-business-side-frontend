@@ -19,7 +19,7 @@ const apiService = axios.create({
 apiService.interceptors.request.use(
   (config) => {
     // 從本地儲存獲取 token
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

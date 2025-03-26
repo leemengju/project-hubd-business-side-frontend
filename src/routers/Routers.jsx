@@ -32,14 +32,16 @@ const AppRouter = () => {
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Order />} />
             <Route path="order" element={<Order />} />
-            {/* <Route path="order_test" element={<OrderTest />} /> */}
             <Route path="prods-and-store" element={<ProdsAndStore />} />
             <Route path="products" element={<Products />} />
             <Route path="store" element={<Store />} />
+            <Route path="cash-flow" element={<CashFlow />} />
+            <Route path="member" element={<Member />} />
+            <Route path="marketing" element={<Marketing />} />
+            <Route path="setting" element={<Setting />} />
             
             {/* 金流管理相關路由 */}
             <Route path="cash-flow" element={<CashFlow />} />
-            
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />
             <Route path="setting" element={<Setting />} />
