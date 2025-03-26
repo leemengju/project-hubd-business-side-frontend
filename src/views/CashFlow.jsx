@@ -6,6 +6,7 @@ import apiService from "../services/api";
 import { toast } from "react-hot-toast";
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import { CSVLink } from "react-csv";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -83,6 +84,9 @@ const CashFlow = () => {
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
+  const [csvData, setCsvData] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const csvLinkRef = useRef(null);
 
   // 日期篩選
   const today = new Date();
@@ -132,7 +136,8 @@ const CashFlow = () => {
       endDateObj.setHours(23, 59, 59, 999);
       
       // 過濾響應數據，確保日期在範圍內
-      const filteredTransactions = response.data.filter(day => {
+      const filteredTransactions = (response.data || []).filter(day => {
+        if (!day.date) return false;
         const dayDate = new Date(day.date);
         return dayDate >= startDateObj && dayDate <= endDateObj;
       });
@@ -145,6 +150,7 @@ const CashFlow = () => {
       } else {
         toast.error("無法獲取交易列表，請稍後再試");
       }
+      setDailyTransactions([]); // 設置為空陣列避免頁面錯誤
     } finally {
       if (!wasLoading) setIsLoading(false);
     }
@@ -171,7 +177,8 @@ const CashFlow = () => {
       endDateObj.setHours(23, 59, 59, 999);
       
       // 過濾響應數據，確保日期在範圍內
-      const filteredReconciliations = response.data.filter(record => {
+      const filteredReconciliations = (response.data || []).filter(record => {
+        if (!record.reconciliation_date) return false;
         const recordDate = new Date(record.reconciliation_date);
         return recordDate >= startDateObj && recordDate <= endDateObj;
       });
@@ -180,6 +187,7 @@ const CashFlow = () => {
     } catch (error) {
       console.error("獲取對帳列表失敗:", error);
       toast.error("無法獲取對帳列表，請稍後再試");
+      setReconciliations([]); // 設置為空陣列避免頁面錯誤
     } finally {
       if (!wasLoading) setIsLoading(false);
     }
@@ -193,16 +201,23 @@ const CashFlow = () => {
       };
       
       const response = await apiService.get("/payments/dashboard", { params });
-      setStats({
-        totalSales: response.data.stats.total_sales || 0,
-        transactionCount: response.data.stats.transaction_count || 0,
-        totalFees: response.data.stats.total_fees || 0,
-        netIncome: response.data.stats.net_income || 0,
-        pendingReconciliation: response.data.stats.pending_reconciliation || 0,
-        completedReconciliation: response.data.stats.completed_reconciliation || 0
-      });
+      
+      // 確保有有效的回應數據
+      if (response && response.data && response.data.stats) {
+        setStats({
+          totalSales: response.data.stats.total_sales || 0,
+          transactionCount: response.data.stats.transaction_count || 0,
+          totalFees: response.data.stats.total_fees || 0,
+          netIncome: response.data.stats.net_income || 0,
+          pendingReconciliation: response.data.stats.pending_reconciliation || 0,
+          completedReconciliation: response.data.stats.completed_reconciliation || 0
+        });
+      } else {
+        console.warn("獲取金流統計返回無效數據");
+      }
     } catch (error) {
       console.error("獲取金流統計失敗:", error);
+      // 不要顯示錯誤給用戶，只在控制台記錄，保持用戶體驗
     }
   };
 
@@ -347,31 +362,102 @@ const CashFlow = () => {
   };
 
   // 處理數據導出
-  const handleExportData = async () => {
+  const prepareCSVData = async () => {
     try {
+      setIsExporting(true);
       const params = {
         start_date: format(dateRange.startDate, 'yyyy-MM-dd'),
         end_date: format(dateRange.endDate, 'yyyy-MM-dd')
       };
       
-      const response = await apiService.get("/payments/export-excel", { params });
+      // 根據當前活動的選項卡選擇導出的數據
+      let endpoint = activeTab === "transactions" 
+        ? "/payments/transactions/export" 
+        : "/payments/reconciliations/export";
+        
+      console.log("正在請求 CSV 數據，端點:", endpoint, "參數:", params);
       
-      // 建立臨時下載連結
-      const fileName = response.data.filename || "交易記錄.xlsx";
-      const downloadData = response.data.data;
+      // 发送请求前检查本地存储是否有 authToken
+      const hasToken = localStorage.getItem("authToken");
+      if (!hasToken) {
+        console.warn("缺少認證令牌，CSV 導出可能會失敗");
+      }
       
-      // 使用 xlsx 庫轉換數據為 Excel 並下載
-      import('xlsx').then(XLSX => {
-        const worksheet = XLSX.utils.json_to_sheet(downloadData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "交易記錄");
-        XLSX.writeFile(workbook, fileName);
-        toast.success("數據導出成功");
-      });
+      try {
+        const response = await apiService.get(endpoint, { params });
+        
+        if (!response || !response.data) {
+          throw new Error("沒有收到任何數據");
+        }
+        
+        if (!Array.isArray(response.data)) {
+          console.error("返回的數據格式不正確:", response.data);
+          throw new Error("返回的數據格式不正確");
+        }
+        
+        // 設置 CSV 數據
+        console.log(`成功獲取 ${response.data.length} 條記錄用於 CSV 導出`);
+        setCsvData(response.data);
+        
+        // 延遲一下，確保 csvData 已經更新，然後模擬點擊 CSVLink
+        setTimeout(() => {
+          if (csvLinkRef.current) {
+            console.log("CSV 數據準備完成，觸發下載...");
+            csvLinkRef.current.link.click();
+          } else {
+            console.error("CSV 下載鏈接未找到");
+            toast.error("CSV 導出失敗，請稍後再試");
+          }
+          setIsExporting(false);
+        }, 100);
+      } catch (apiError) {
+        console.error("API 請求失敗:", apiError);
+        if (apiError.response && apiError.response.status === 401) {
+          toast.error("認證失敗，請重新登入");
+        } else {
+          toast.error("無法獲取 CSV 數據，請稍後再試");
+        }
+        setIsExporting(false);
+      }
     } catch (error) {
-      console.error("數據導出失敗:", error);
-      toast.error("數據導出失敗，請稍後再試");
+      console.error("準備導出數據失敗:", error);
+      toast.error("準備導出數據失敗，請稍後再試");
+      setIsExporting(false);
     }
+  };
+
+  // 獲取 CSV 標題
+  const getCSVHeaders = () => {
+    if (activeTab === "transactions") {
+      return [
+        { label: "日期", key: "date" },
+        { label: "交易筆數", key: "transaction_count" },
+        { label: "總金額", key: "total_amount" },
+        { label: "手續費", key: "total_fee" },
+        { label: "淨收入", key: "total_net_amount" },
+        { label: "對帳狀態", key: "reconciliation_status" },
+        { label: "備註", key: "reconciliation_notes" }
+      ];
+    } else {
+      return [
+        { label: "日期", key: "reconciliation_date" },
+        { label: "對帳編號", key: "reconciliation_number" },
+        { label: "交易筆數", key: "transaction_count" },
+        { label: "交易總額", key: "total_amount" },
+        { label: "對帳時間", key: "created_at" },
+        { label: "操作人員", key: "staff_name" },
+        { label: "狀態", key: "status" },
+        { label: "備註", key: "notes" }
+      ];
+    }
+  };
+
+  // 獲取導出文件名
+  const getCSVFileName = () => {
+    const dateStr = format(new Date(), 'yyyyMMdd_HHmmss');
+    return activeTab === "transactions" 
+      ? `交易記錄_${dateStr}.csv` 
+      : `對帳記錄_${dateStr}.csv`;
   };
 
   // 渲染日期範圍選擇器
@@ -1239,12 +1325,27 @@ const CashFlow = () => {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={handleExportData}
+          onClick={prepareCSVData}
           className="flex items-center gap-1"
+          disabled={isExporting}
         >
-          <DownloadIcon className="h-4 w-4" />
-          導出數據
+          {isExporting ? (
+            <Loader2Icon className="h-4 w-4 animate-spin" />
+          ) : (
+            <DownloadIcon className="h-4 w-4" />
+          )}
+          導出CSV
         </Button>
+        
+        {/* 隱藏的 CSVLink 組件 */}
+        <CSVLink
+          data={csvData}
+          headers={getCSVHeaders()}
+          filename={getCSVFileName()}
+          className="hidden"
+          ref={csvLinkRef}
+          target="_blank"
+        />
       </div>
 
       {/* 使用 Shadcn UI 的 Tabs 元件 */}
@@ -1432,7 +1533,12 @@ const CashFlow = () => {
         </TabsContent>
 
         <TabsContent value="settings" className="mt-0">
-          <CashFlowSettings />
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold mb-4">金流服務設定</h2>
+            <div className="border-t pt-4">
+              <CashFlowSettings />
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 

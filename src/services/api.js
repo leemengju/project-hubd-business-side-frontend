@@ -12,7 +12,7 @@ const apiService = axios.create({
   // 請求超時時間 (毫秒)
   timeout: 10000,
   // 跨域請求是否需要憑證
-  withCredentials: false,
+  withCredentials: true,
 });
 
 // 請求攔截器
@@ -41,19 +41,29 @@ apiService.interceptors.response.use(
     // 處理 401 未授權錯誤 (可選：重新整理 token)
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        // 這裡可以實作 token 刷新邏輯
-        // const refreshResponse = await apiService.post("/auth/refresh");
-        // localStorage.setItem("token", refreshResponse.data.token);
-        // originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.token}`;
-        // return axios(originalRequest);
-      } catch (refreshError) {
-        // 重新整理 token 失敗，導向登入頁
-        console.error("授權已過期，請重新登入");
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-        return Promise.reject(refreshError);
+
+      // 只有在特定需要認證的API才處理認證問題，對於其他API，我們允許繼續
+      if (originalRequest.url.includes('/auth/') || 
+          originalRequest.url.includes('/user/') || 
+          originalRequest.url.includes('/admin/')) {
+        try {
+          // 這裡可以實作 token 刷新邏輯
+          console.warn("授權已過期，嘗試刷新...");
+          // const refreshResponse = await apiService.post("/auth/refresh");
+          // localStorage.setItem("authToken", refreshResponse.data.token);
+          // originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.token}`;
+          // return axios(originalRequest);
+        } catch (refreshError) {
+          // 重新整理 token 失敗，導向登入頁
+          console.error("授權已過期，請重新登入");
+          localStorage.removeItem("authToken");
+          // 對於關鍵操作才需要跳轉登入頁
+          // window.location.href = "/login";
+          return Promise.reject(refreshError);
+        }
       }
+      // 對於非關鍵API，我們允許401錯誤繼續傳遞，不中斷用戶體驗
+      console.warn("API需要認證，但繼續顯示可用資料");
     }
 
     // 處理 API 回傳的具體錯誤訊息
@@ -82,9 +92,22 @@ const apiServiceMethods = {
   // GET 請求
   get: async (url, params = {}) => {
     try {
-      const response = await apiService.get(url, { params });
+      // 檢查參數格式
+      let options = params;
+      
+      // 如果傳入的是帶有 params 屬性的物件，直接使用
+      if (params.params || params.headers || params.data) {
+        options = params;
+      } else {
+        // 否則，將參數包裝為 params 屬性
+        options = { params };
+      }
+      
+      console.log("API GET 請求:", url, options);
+      const response = await apiService.get(url, options);
       return response;
     } catch (error) {
+      console.error(`API GET 錯誤 [${url}]:`, error);
       throw error;
     }
   },

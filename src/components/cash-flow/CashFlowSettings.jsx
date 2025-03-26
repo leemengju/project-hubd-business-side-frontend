@@ -63,17 +63,28 @@ const CashFlowSettings = () => {
 
   // 載入所有金流設定
   useEffect(() => {
-    fetchCashFlowSettings();
+    fetchSettings();
   }, []);
 
-  const fetchCashFlowSettings = async () => {
+  // 獲取設定
+  const fetchSettings = async () => {
     setLoading(true);
     try {
       const response = await apiService.get("/cash-flow-settings");
-      setCashFlowSettings(response.data || []);
+      
+      console.log("金流設定 API 響應:", response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        // API返回的是陣列格式，直接設置
+        setCashFlowSettings(response.data);
+      } else {
+        console.warn("API返回格式不符預期:", response.data);
+        setCashFlowSettings([]);
+      }
     } catch (error) {
-      console.error("獲取金流設定失敗:", error);
-      toast.error("無法獲取金流設定，請稍後再試");
+      console.error("獲取設定失敗:", error);
+      toast.error("無法獲取設定，請稍後再試");
+      setCashFlowSettings([]);
     } finally {
       setLoading(false);
     }
@@ -106,7 +117,7 @@ const CashFlowSettings = () => {
         ATM_enable: false,
         credit_enable: false,
       });
-      fetchCashFlowSettings();
+      fetchSettings();
     } catch (error) {
       console.error("新增金流設定失敗:", error);
       toast.error(
@@ -117,16 +128,17 @@ const CashFlowSettings = () => {
 
   // 編輯金流設定
   const handleEditSetting = (setting) => {
+    console.log("正在編輯設定:", setting);
     setCurrentSetting(setting);
     setFormData({
       name: setting.name,
       Hash_Key: setting.Hash_Key,
       Hash_IV: setting.Hash_IV,
       merchant_ID: setting.merchant_ID,
-      WEB_enable: setting.WEB_enable,
-      CVS_enable: setting.CVS_enable,
-      ATM_enable: setting.ATM_enable,
-      credit_enable: setting.credit_enable,
+      WEB_enable: setting.WEB_enable || false,
+      CVS_enable: setting.CVS_enable || false,
+      ATM_enable: setting.ATM_enable || false,
+      credit_enable: setting.credit_enable || false,
     });
     setShowEditDialog(true);
   };
@@ -134,10 +146,14 @@ const CashFlowSettings = () => {
   // 更新金流設定
   const handleUpdateSetting = async () => {
     try {
-      await apiService.put(`/cash-flow-settings/${currentSetting.name}`, formData);
+      console.log("更新金流設定，數據:", formData);
+      
+      const response = await apiService.put(`/cash-flow-settings/${currentSetting.name}`, formData);
+      console.log("更新金流設定響應:", response.data);
+      
       toast.success("金流設定更新成功");
       setShowEditDialog(false);
-      fetchCashFlowSettings();
+      fetchSettings();
     } catch (error) {
       console.error("更新金流設定失敗:", error);
       toast.error(
@@ -150,9 +166,12 @@ const CashFlowSettings = () => {
   const handleDeleteSetting = async (name) => {
     if (window.confirm(`確定要刪除 ${name} 金流設定嗎？`)) {
       try {
-        await apiService.delete(`/cash-flow-settings/${name}`);
+        console.log("刪除金流設定:", name);
+        const response = await apiService.delete(`/cash-flow-settings/${name}`);
+        console.log("刪除金流設定響應:", response.data);
+        
         toast.success("金流設定刪除成功");
-        fetchCashFlowSettings();
+        fetchSettings();
       } catch (error) {
         console.error("刪除金流設定失敗:", error);
         toast.error(
@@ -346,9 +365,9 @@ const CashFlowSettings = () => {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-gray-50 text-gray-500 text-sm">
+              <div className="bg-gray-50 text-gray-500 text-sm p-3 flex items-center border-t" style={{ minHeight: '48px' }}>
                 最後更新: {new Date(setting.updated_at).toLocaleString()}
-              </CardFooter>
+              </div>
             </Card>
           ))}
         </div>
