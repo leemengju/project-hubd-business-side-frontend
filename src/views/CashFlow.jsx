@@ -949,11 +949,7 @@ const CashFlow = () => {
   const handleSubmitReconciliation = async () => {
     try {
       if (!selectedStatus) {
-        toast({
-          title: "請選擇對帳狀態",
-          description: "請至少選擇一個對帳狀態才能進行提交",
-          variant: "destructive",
-        });
+        toast.error("請至少選擇一個對帳狀態才能進行提交");
         return;
       }
 
@@ -962,24 +958,16 @@ const CashFlow = () => {
       const formattedDate = format(currentDate, 'yyyy-MM-dd');
       
       // 呼叫API更新對帳狀態
-      const response = await apiService.post('/reconciliations/daily', {
-        date: formattedDate,
+      const response = await apiService.post(`/reconciliations/daily/${formattedDate}`, {
         status: selectedStatus,
         notes: reconciliationNotes
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update reconciliation status');
-      }
       
       // 關閉對話框
       setShowStatusDialog(false);
       
       // 顯示成功提示
-      toast({
-        title: "對帳狀態已更新",
-        description: "對帳狀態已成功更新",
-      });
+      toast.success("對帳狀態已成功更新");
       
       // 更新本地狀態
       // 1. 如果詳細頁面開啟，更新當前dailyData的狀態
@@ -1017,11 +1005,7 @@ const CashFlow = () => {
       fetchStats();
     } catch (error) {
       console.error('Error updating reconciliation status:', error);
-      toast({
-        title: "更新失敗",
-        description: "無法更新對帳狀態，請稍後再試",
-        variant: "destructive",
-      });
+      toast.error("無法更新對帳狀態，請稍後再試");
     } finally {
       setIsUpdatingStatus(false);
     }
