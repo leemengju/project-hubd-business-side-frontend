@@ -914,7 +914,7 @@ const CashFlow = () => {
       
       // 格式化狀態值以進行比較
       const formatStatusValue = (status) => {
-        if (!status) return '';
+        if (!status) return ''; // 如果狀態為空，返回空字串，保持提示訊息
         
         const normalizedStatus = String(status).toLowerCase().trim();
         if (normalizedStatus === '1' || normalizedStatus === 'completed' || normalizedStatus === 'normal') 
@@ -924,11 +924,12 @@ const CashFlow = () => {
         if (normalizedStatus === 'pending') 
           return 'pending';
         
-        return '';
+        return ''; // 默認情況下返回空字串
       };
       
       // 設置當前狀態
       const formattedStatus = formatStatusValue(status);
+      console.log("設置對帳狀態:", formattedStatus, "原始狀態:", status);
       setSelectedStatus(formattedStatus);
       setReconciliationNotes(notes);
       
@@ -938,7 +939,7 @@ const CashFlow = () => {
       console.error("獲取對帳狀態失敗:", error);
       toast.error("無法獲取對帳狀態，請稍後再試");
       
-      // 即使出錯，仍然打開對話框，默認為未選擇狀態
+      // 即使出錯，仍然打開對話框，不預設選擇狀態
       setSelectedStatus('');
       setReconciliationNotes('');
       setShowStatusDialog(true);
@@ -1552,22 +1553,29 @@ const CashFlow = () => {
                 {!selectedStatus && <span className="text-xs text-red-500 ml-1">*必選</span>}
               </Label>
               
-              <RadioGroup value={selectedStatus} onValueChange={setSelectedStatus} className="grid grid-cols-3 gap-4">
-                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'normal' ? 'bg-green-50 border-green-300 ring-2 ring-green-200' : 'hover:border-brandBlue-light'}`}>
+              <RadioGroup 
+                value={selectedStatus} 
+                onValueChange={(value) => {
+                  console.log("選擇狀態:", value);
+                  setSelectedStatus(value);
+                }} 
+                className="grid grid-cols-3 gap-4"
+              >
+                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'normal' ? 'bg-green-50 border-green-300 ring-2 ring-green-200' : 'hover:border-brandBlue-light'}`} onClick={() => setSelectedStatus('normal')}>
                   <RadioGroupItem value="normal" id="normal" className="sr-only" />
                   <Label htmlFor="normal" className="cursor-pointer text-center">
                     <CheckCircleIcon className="h-8 w-8 mb-2 mx-auto text-green-500" />
                     <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">正常</span>
                   </Label>
                 </div>
-                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'abnormal' ? 'bg-red-50 border-red-300 ring-2 ring-red-200' : 'hover:border-brandBlue-light'}`}>
+                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'abnormal' ? 'bg-red-50 border-red-300 ring-2 ring-red-200' : 'hover:border-brandBlue-light'}`} onClick={() => setSelectedStatus('abnormal')}>
                   <RadioGroupItem value="abnormal" id="abnormal" className="sr-only" />
                   <Label htmlFor="abnormal" className="cursor-pointer text-center">
                     <AlertTriangleIcon className="h-8 w-8 mb-2 mx-auto text-red-500" />
                     <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">異常</span>
                   </Label>
                 </div>
-                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'pending' ? 'bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200' : 'hover:border-brandBlue-light'}`}>
+                <div className={`flex flex-col items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${selectedStatus === 'pending' ? 'bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200' : 'hover:border-brandBlue-light'}`} onClick={() => setSelectedStatus('pending')}>
                   <RadioGroupItem value="pending" id="pending" className="sr-only" />
                   <Label htmlFor="pending" className="cursor-pointer text-center">
                     <ClockIcon className="h-8 w-8 mb-2 mx-auto text-amber-500" />
