@@ -73,7 +73,7 @@ const ProductCategorySelector = ({
       try {
         let endpoint = '';
         if (type === 'products' || type === 'applicable_products') {
-          endpoint = '/products';
+          endpoint = '/products/spec';
         } else if (type === 'categories' || type === 'applicable_categories') {
           endpoint = '/categories';
         } else if (type === 'users') {
