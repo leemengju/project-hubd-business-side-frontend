@@ -15,6 +15,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
+// 添加全局 API 數據緩存
+const apiDataCache = {
+  products: null,
+  applicable_products: null,
+  categories: null,
+  applicable_categories: null,
+  users: null,
+  lastFetchTime: {
+    products: null,
+    applicable_products: null,
+    categories: null,
+    applicable_categories: null,
+    users: null
+  }
+};
+
+// 緩存過期時間（5分鐘，以毫秒為單位）
+const CACHE_EXPIRY_TIME = 5 * 60 * 1000; 
+
 const ProductCategorySelector = ({ 
   isOpen, 
   onClose, 
@@ -30,6 +49,10 @@ const ProductCategorySelector = ({
   const [filter, setFilter] = useState("");
   const [filterType, setFilterType] = useState("name");
   const mouseDownOutside = useRef(false);
+  // 添加載入狀態追蹤
+  const [isLoading, setIsLoading] = useState(false);
+  // 追蹤組件是否已掛載
+  const isMounted = useRef(false);
 
   // 處理滑鼠按下事件
   const handleMouseDown = (e) => {
@@ -67,33 +90,83 @@ const ProductCategorySelector = ({
     };
   }, [isOpen, onClose]);
 
-  // 獲取商品或分類列表
+  // 檢查緩存是否過期
+  const isCacheExpired = (cacheType) => {
+    const lastFetchTime = apiDataCache.lastFetchTime[cacheType];
+    if (!lastFetchTime) return true;
+    
+    const currentTime = new Date().getTime();
+    return (currentTime - lastFetchTime) > CACHE_EXPIRY_TIME;
+  };
+
+  // 獲取商品或分類列表，使用緩存機制
   useEffect(() => {
+    isMounted.current = true;
+    
     const fetchItems = async () => {
       try {
+        setIsLoading(true);
+        
+        // 決定API端點和緩存類型
         let endpoint = '';
+        let cacheType = type;
+        
         if (type === 'products' || type === 'applicable_products') {
           endpoint = '/products/spec';
+          cacheType = 'products'; // 兩種類型共用同一個緩存
         } else if (type === 'categories' || type === 'applicable_categories') {
           endpoint = '/categories';
+          cacheType = 'categories'; // 兩種類型共用同一個緩存
         } else if (type === 'users') {
           endpoint = '/users';
+          cacheType = 'users';
+        }
+        
+        // 檢查緩存
+        if (apiDataCache[cacheType] && !isCacheExpired(cacheType)) {
+          console.log(`使用緩存的 ${cacheType} 數據`);
+          setItems(apiDataCache[cacheType]);
+          setIsLoading(false);
+          return;
         }
         
         console.log(`正在獲取 ${type} 資料，使用 API 端點:`, endpoint);
         const response = await api.get(endpoint);
         console.log(`獲取到 ${type} 資料:`, response.data);
-        setItems(response.data);
+        
+        // 更新緩存
+        if (isMounted.current) {
+          setItems(response.data);
+          apiDataCache[cacheType] = response.data;
+          apiDataCache.lastFetchTime[cacheType] = new Date().getTime();
+        }
       } catch (error) {
         console.error(`Error fetching ${type}:`, error);
+      } finally {
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     // 如果是商品選擇器，同時獲取分類列表用於篩選
     const fetchCategories = async () => {
       try {
+        // 檢查分類緩存
+        if (apiDataCache.categories && !isCacheExpired('categories')) {
+          console.log(`使用緩存的分類數據`);
+          setCategories(apiDataCache.categories);
+          return;
+        }
+        
         const response = await api.get('/categories');
-        setCategories(response.data);
+        
+        if (isMounted.current) {
+          setCategories(response.data);
+          // 更新分類緩存
+          apiDataCache.categories = response.data;
+          apiDataCache.lastFetchTime.categories = new Date().getTime();
+        }
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
@@ -105,7 +178,11 @@ const ProductCategorySelector = ({
         fetchCategories();
       }
     }
-  }, [isOpen]);
+    
+    return () => {
+      isMounted.current = false;
+    };
+  }, [isOpen, type]);
 
   // 當選擇器打開時，根據已選項目設置初始狀態
   useEffect(() => {

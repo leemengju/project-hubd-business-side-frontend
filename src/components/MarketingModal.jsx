@@ -66,6 +66,14 @@ const MarketingModal = ({
   const [selectedSelectorItems, setSelectedSelectorItems] = useState([]);
   // 添加初始化追蹤 ref
   const formInitialized = useRef(false);
+  // 添加儲存之前選擇的項目的 ref，避免重複 API 調用
+  const previousSelectedItems = useRef({
+    products: [],
+    applicable_products: [],
+    categories: [],
+    applicable_categories: [],
+    users: []
+  });
 
   // 輔助函數：判斷是否為已排程狀態（開始日期在將來）
   const isScheduled = (dateString) => {
@@ -297,36 +305,43 @@ const MarketingModal = ({
 
   // 處理關閉請求，確認用戶是否真的需要保存數據
   const handleCloseRequest = () => {
-    // 如果選擇器或用戶選擇器正在顯示，先關閉它們
+    // 如果選擇器正在顯示，則先關閉選擇器而不是顯示確認框
     if (showSelector) {
-      setShowSelector(false);
-      setSelectorJustClosed(true);
-      
-      // 使用setTimeout，以確保在當前事件循環結束後重置標誌
-      setTimeout(() => {
-        setSelectorJustClosed(false);
-      }, 100);
+      handleSelectorClose();
       return;
     }
     
     if (showUserSelector) {
       setShowUserSelector(false);
-      setSelectorJustClosed(true);
-      
-      // 使用setTimeout，以確保在當前事件循環結束後重置標誌
-      setTimeout(() => {
-        setSelectorJustClosed(false);
-      }, 100);
       return;
     }
-    
-    // 如果選擇器剛剛關閉，忽略這次關閉請求
-    if (selectorJustClosed) {
-      return;
-    }
-    
-    // 如果表單已被修改，則顯示確認視窗
+
+    // 如果有未保存的更改，顯示確認框
     if (isDirty) {
+      // 對於活動，再次檢查是否真的有用戶輸入
+      if (type === 'campaigns' && mode === 'add') {
+        // 檢查是否真的有填寫關鍵內容
+        const hasRealContent = formData.name || 
+                            (formData.discount_value && formData.discount_value !== "0") ||
+                            formData.applicable_products?.length > 0;
+        
+        // 如果實際沒有內容，直接關閉
+        if (!hasRealContent) {
+          onClose();
+          return;
+        }
+      }
+      
+      // 對於優惠券，檢查是否有必填項
+      if (type === 'coupons' && mode === 'add') {
+        const hasRequiredFields = formData.title || formData.code || formData.discount_value;
+        if (!hasRequiredFields) {
+          onClose();
+          return;
+        }
+      }
+      
+      // 如果上述檢查通過，說明確實有內容，顯示確認窗口
       setShowCloseConfirmation(true);
     } else {
       // 如果表單未修改，直接關閉
@@ -336,34 +351,72 @@ const MarketingModal = ({
 
   // 開啟選擇器（優化版）
   const openSelector = useCallback((type) => {
+    // 如果選擇器剛剛關閉，避免立即再次打開
+    if (selectorJustClosed) {
+      return;
+    }
+
     setSelectorType(type);
     
-    // 根據選擇器類型決定要顯示哪種選擇器
-    if (type === 'products' || type === 'applicable_products') {
+    if (type === 'products') {
       // 獲取目前已選取的商品
-      const currentlySelected = type === 'products' 
-        ? formData.products || [] 
-        : formData.applicable_products || [];
-        
-      // 設置選擇器狀態
-      setSelectedSelectorItems(currentlySelected);
+      const currentlySelected = formData.products || [];
+      
+      // 如果選擇的商品沒變，避免重新設置狀態和打開選擇器
+      if (JSON.stringify(currentlySelected) === JSON.stringify(previousSelectedItems.current.products)) {
+        console.log('產品選擇沒變化，使用緩存數據');
+        setSelectedSelectorItems(currentlySelected);
+      } else {
+        console.log('產品選擇有變化，更新選擇器狀態');
+        setSelectedSelectorItems(currentlySelected);
+        // 更新記錄
+        previousSelectedItems.current.products = [...currentlySelected];
+      }
+      
       setShowSelector(true);
     } 
+    else if (type === 'applicable_products') {
+      // 獲取目前已選取的適用商品
+      const currentlySelected = formData.applicable_products || [];
+      
+      // 如果選擇的商品沒變，避免重新設置狀態和打開選擇器
+      if (JSON.stringify(currentlySelected) === JSON.stringify(previousSelectedItems.current.applicable_products)) {
+        console.log('適用產品選擇沒變化，使用緩存數據');
+        setSelectedSelectorItems(currentlySelected);
+      } else {
+        console.log('適用產品選擇有變化，更新選擇器狀態');
+        setSelectedSelectorItems(currentlySelected);
+        // 更新記錄
+        previousSelectedItems.current.applicable_products = [...currentlySelected];
+      }
+      
+      setShowSelector(true);
+    }
     else if (type === 'categories' || type === 'applicable_categories') {
       // 獲取目前已選取的分類
       const currentlySelected = type === 'categories' 
         ? formData.categories || [] 
         : formData.applicable_categories || [];
       
-      // 設置選擇器狀態
-      setSelectedSelectorItems(currentlySelected);
+      // 如果選擇的分類沒變，避免重新設置狀態和打開選擇器
+      const cacheKey = type === 'categories' ? 'categories' : 'applicable_categories';
+      if (JSON.stringify(currentlySelected) === JSON.stringify(previousSelectedItems.current[cacheKey])) {
+        console.log(`${cacheKey} 選擇沒變化，使用緩存數據`);
+        setSelectedSelectorItems(currentlySelected);
+      } else {
+        console.log(`${cacheKey} 選擇有變化，更新選擇器狀態`);
+        setSelectedSelectorItems(currentlySelected);
+        // 更新記錄
+        previousSelectedItems.current[cacheKey] = [...currentlySelected];
+      }
+      
       setShowSelector(true);
     }
     else if (type === 'users') {
       // 設置選擇器狀態
       setShowUserSelector(true);
     }
-  }, [formData]);
+  }, [formData, selectorJustClosed]);
 
   // 開啟用戶選擇器
   const openUserSelector = useCallback(() => {
@@ -1639,6 +1692,18 @@ const MarketingModal = ({
     }
   }, [isOpen, mode, type]);
 
+  // 修改選擇器關閉處理函數，防止立即重新打開
+  const handleSelectorClose = useCallback(() => {
+    setShowSelector(false);
+    // 設置標記，表明選擇器剛剛關閉
+    setSelectorJustClosed(true);
+    
+    // 100ms 後重置標記，允許再次打開選擇器
+    setTimeout(() => {
+      setSelectorJustClosed(false);
+    }, 100);
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -2483,13 +2548,15 @@ const MarketingModal = ({
             </div>
 
             {/* Product/Category Selector Modal */}
-            <ProductCategorySelector
-              isOpen={showSelector}
-              onClose={() => setShowSelector(false)}
-              selectedItems={selectedSelectorItems}
-              onConfirm={handleSelectorConfirm}
-              type={selectorType}
-            />
+            {showSelector && (
+              <ProductCategorySelector
+                isOpen={showSelector}
+                onClose={handleSelectorClose} // 使用新的處理函數
+                selectedItems={selectedSelectorItems}
+                onConfirm={handleSelectorConfirm}
+                type={selectorType}
+              />
+            )}
 
             {/* User Selector Modal */}
             <UserSelector
