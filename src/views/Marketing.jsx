@@ -877,7 +877,7 @@ const Marketing = () => {
                     <p className="text-base p-2 bg-gray-50 rounded">{detailItem.description}</p>
                   </div>
                 )}
-                {(detailItem.products?.length > 0 || detailItem.categories?.length > 0 || detailItem.users?.length > 0) && (
+                {(detailItem.products?.length > 0 || detailItem.categories?.length > 0 || detailItem.users?.length > 0 || detailItem.applicable_products?.length > 0 || detailItem.applicable_categories?.length > 0) && (
                   <div className="space-y-1 col-span-2">
                     <h4 className="text-sm font-medium text-gray-500">適用範圍</h4>
                     <div className="flex flex-wrap gap-2">
@@ -1001,18 +1001,17 @@ const Marketing = () => {
                     <p className="text-base p-2 bg-gray-50 rounded">{detailItem.description}</p>
                   </div>
                 )}
-                {(detailItem.applicable_products?.length > 0 || detailItem.applicable_categories?.length > 0) && (
+                {(detailItem.applicable_products?.length > 0 || detailItem.applicable_categories?.length > 0 || detailItem.users?.length > 0) && (
                   <div className="space-y-1 col-span-2">
                     <h4 className="text-sm font-medium text-gray-500">適用範圍</h4>
                     <div className="flex flex-wrap gap-2">
                       {detailItem.applicable_products?.length > 0 && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100 transition" onClick={(e) => {
                           e.stopPropagation(); 
-                          // 設置當前活動作為詳細項目
+                          // 設置當前優惠券作為詳細項目
                           setDetailItem(detailItem);
                           // 確保 detailItem 已正確設置
-                          console.log("點擊了促銷活動適用商品按鈕", detailItem);
-                          // 延遲顯示適用範圍模態窗口
+                          console.log("點擊了優惠券適用商品按鈕", detailItem);
                           handleShowApplicable("applicable_products", e);
                         }}>
                           <PackageIcon className="h-3 w-3 mr-1" />
@@ -1022,15 +1021,27 @@ const Marketing = () => {
                       {detailItem.applicable_categories?.length > 0 && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-50 text-green-700 cursor-pointer hover:bg-green-100 transition" onClick={(e) => {
                           e.stopPropagation(); 
-                          // 設置當前活動作為詳細項目
+                          // 設置當前優惠券作為詳細項目
                           setDetailItem(detailItem);
                           // 確保 detailItem 已正確設置
-                          console.log("點擊了促銷活動適用分類按鈕", detailItem);
-                          // 延遲顯示適用範圍模態窗口
+                          console.log("點擊了優惠券適用分類按鈕", detailItem);
                           handleShowApplicable("applicable_categories", e);
                         }}>
                           <TagIcon className="h-3 w-3 mr-1" />
                           {detailItem.applicable_categories.length} 個分類
+                        </span>
+                      )}
+                      {detailItem.users?.length > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-50 text-purple-700 cursor-pointer hover:bg-purple-100 transition" onClick={(e) => {
+                          e.stopPropagation(); 
+                          // 設置當前優惠券作為詳細項目
+                          setDetailItem(detailItem);
+                          // 確保 detailItem 已正確設置
+                          console.log("點擊了優惠券會員適用範圍按鈕", detailItem);
+                          handleShowApplicable("users", e);
+                        }}>
+                          <Users2Icon className="h-3 w-3 mr-1" />
+                          {detailItem.users.length} 位會員
                         </span>
                       )}
                     </div>
@@ -1341,6 +1352,20 @@ const Marketing = () => {
                               }}>
                                 <TagIcon className="h-3 w-3 mr-1" />
                                 {campaign.applicable_categories.length} 個分類
+                              </span>
+                            )}
+                            {campaign.users?.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-50 text-purple-700 cursor-pointer hover:bg-purple-100 transition" onClick={(e) => {
+                                e.stopPropagation(); 
+                                // 設置當前活動作為詳細項目
+                                setDetailItem(campaign);
+                                // 確保 detailItem 已正確設置
+                                console.log("點擊了促銷活動適用會員按鈕", campaign);
+                                // 延遲顯示適用範圍模態窗口
+                                handleShowApplicable("users", e);
+                              }}>
+                                <Users2Icon className="h-3 w-3 mr-1" />
+                                {campaign.users.length} 位會員
                               </span>
                             )}
                           </div>

@@ -423,6 +423,40 @@ const MarketingModal = ({
     setShowUserSelector(true);
   }, []);
 
+  // 處理選擇的商品或分類項目
+  const handleSelectedItems = (items, type) => {
+    console.log(`Received selected ${type}:`, items);
+    
+    // 根據不同類型設置狀態
+    if (type === 'products' || type === 'applicable_products') {
+      // 產品選擇處理
+      setSelectedSelectorItems(items);
+      setSelectorType(type);
+    } else if (type === 'categories' || type === 'applicable_categories') {
+      // 分類選擇處理，確保能夠正確處理分類對象
+      // 確保所有分類對象都具有必要的屬性
+      const processedCategories = items.map(category => {
+        if (!category) return null;
+        
+        // 確保分類對象具有完整的結構
+        return {
+          id: category.id,
+          name: category.name || (category.child_category ? `${category.parent_category} - ${category.child_category}` : '未命名分類'),
+          parent_category: category.parent_category || null,
+          child_category: category.child_category || null,
+          isCategory: true
+        };
+      }).filter(Boolean); // 過濾掉空值
+      
+      console.log('Processed categories:', processedCategories);
+      setSelectedSelectorItems(processedCategories);
+      setSelectorType(type);
+    } else if (type === 'users') {
+      // 用戶選擇處理
+      setSelectedUsers(items);
+    }
+  };
+
   // 商品/分類選擇確認
   const handleSelectorConfirm = (items) => {
     if (selectorType === 'products') {

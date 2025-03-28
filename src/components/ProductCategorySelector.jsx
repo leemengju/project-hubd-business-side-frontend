@@ -211,77 +211,117 @@ const ProductCategorySelector = ({
   const toggleProductSelection = (product) => {
     let newSelected = [...selected];
     
-    // 獲取正確的product_id和spec_id
-    const productId = product.product_id || product.main_product_id || '';
-    const specId = product.spec_id || '';
+    // 獲取正確的識別信息
+    const isCategory = type === 'categories' || type === 'applicable_categories';
     
-    console.log('切換產品選擇狀態:', { productId, specId, product });
-    
-    if (!productId) {
-      console.warn('無法切換選擇狀態: 產品缺少product_id', product);
-    }
-    
-    // 檢查產品是否已被選中 - 使用spec_id或product_id作為識別依據
-    const productIndex = newSelected.findIndex(p => {
-      // 如果有spec_id，則按spec_id檢查，這是規格的唯一標識
-      if (specId && p.spec_id === specId) {
-        return true;
+    // 根據不同類型處理選擇邏輯
+    if (isCategory) {
+      // 對於分類項目，使用 id 作為主要識別
+      const categoryId = product.id || '';
+      
+      if (!categoryId) {
+        console.warn('無法切換選擇狀態: 分類缺少ID', product);
+        return;
       }
       
-      // 如果没有spec_id，則按product_id檢查，這是商品的唯一標識
-      if (!specId && p.product_id === productId) {
-        return true;
-      }
+      // 檢查分類是否已被選中 - 使用id作為識別依據
+      const categoryIndex = newSelected.findIndex(c => c.id === categoryId);
+      const isSelected = categoryIndex !== -1;
       
-      // 兼容舊數據格式
-      return p.id === product.id;
-    });
-    
-    const isSelected = productIndex !== -1;
-    
-    if (!isSelected) {
-      // 添加新選擇
-      if (product.variants || product.color || product.size) {
-        // 選擇一個有規格的完整產品
-        const completeProduct = {
-          id: specId || `spec_${Math.random().toString(36).substring(2, 7)}`, // 以規格ID為優先
-          spec_id: specId, // 規格流水號
-          product_id: productId, // 商品編號（如"pa001"）
-          product_main_id: product.product_main_id || productId,
-          name: product.name || "未命名商品",
-          price: product.price || 0,
-          color: product.color === 'null' ? null : product.color,
-          size: product.size === 'null' ? null : product.size,
-          sku: product.sku || "",
-          stock: product.stock || 0,
-          image: product.image || "https://via.placeholder.com/100?text=無圖片",
-          description: product.description || "",
-          category_name: product.category_name || ""
-        };
-        newSelected.push(completeProduct);
-      } else {
-        // 選擇主產品或分類
-        const completeItem = {
+      if (!isSelected) {
+        // 添加分類選擇
+        const completeCategory = {
           ...product,
-          id: product.id || productId, // 確保ID存在
-          product_id: productId, // 商品編號
-          spec_id: specId // 規格流水號
+          id: categoryId,
+          // 確保這些屬性存在
+          name: product.name || (product.child_category ? `${product.parent_category} - ${product.child_category}` : '未命名分類'),
+          parent_category: product.parent_category || null,
+          child_category: product.child_category || null,
+          // 對分類設置特殊標記，以便在 UI 中區分
+          isCategory: true
         };
         
-        // 建立深度拷貝，避免參考關係問題
-        const itemToAdd = JSON.parse(JSON.stringify(completeItem));
-        newSelected.push(itemToAdd);
+        // 使用深度拷貝，避免參考關係問題
+        newSelected.push(JSON.parse(JSON.stringify(completeCategory)));
+        console.log('已添加分類:', completeCategory);
+      } else {
+        // 移除已選分類
+        newSelected.splice(categoryIndex, 1);
+        console.log('已移除分類 ID:', categoryId);
       }
     } else {
-      // 移除已選產品
-      newSelected.splice(productIndex, 1);
+      // 原有的商品選擇邏輯
+      // 獲取正確的product_id和spec_id
+      const productId = product.product_id || product.main_product_id || '';
+      const specId = product.spec_id || '';
+      
+      console.log('切換產品選擇狀態:', { productId, specId, product });
+      
+      if (!productId) {
+        console.warn('無法切換選擇狀態: 產品缺少product_id', product);
+      }
+      
+      // 檢查產品是否已被選中 - 使用spec_id或product_id作為識別依據
+      const productIndex = newSelected.findIndex(p => {
+        // 如果有spec_id，則按spec_id檢查，這是規格的唯一標識
+        if (specId && p.spec_id === specId) {
+          return true;
+        }
+        
+        // 如果没有spec_id，則按product_id檢查，這是商品的唯一標識
+        if (!specId && p.product_id === productId) {
+          return true;
+        }
+        
+        // 兼容舊數據格式
+        return p.id === product.id;
+      });
+      
+      const isSelected = productIndex !== -1;
+      
+      if (!isSelected) {
+        // 添加新選擇
+        if (product.variants || product.color || product.size) {
+          // 選擇一個有規格的完整產品
+          const completeProduct = {
+            id: specId || `spec_${Math.random().toString(36).substring(2, 7)}`, // 以規格ID為優先
+            spec_id: specId, // 規格流水號
+            product_id: productId, // 商品編號（如"pa001"）
+            product_main_id: product.product_main_id || productId,
+            name: product.name || "未命名商品",
+            price: product.price || 0,
+            color: product.color === 'null' ? null : product.color,
+            size: product.size === 'null' ? null : product.size,
+            sku: product.sku || "",
+            stock: product.stock || 0,
+            image: product.image || "https://via.placeholder.com/100?text=無圖片",
+            description: product.description || "",
+            category_name: product.category_name || ""
+          };
+          newSelected.push(completeProduct);
+        } else {
+          // 選擇主產品或分類
+          const completeItem = {
+            ...product,
+            id: product.id || productId, // 確保ID存在
+            product_id: productId, // 商品編號
+            spec_id: specId // 規格流水號
+          };
+          
+          // 建立深度拷貝，避免參考關係問題
+          const itemToAdd = JSON.parse(JSON.stringify(completeItem));
+          newSelected.push(itemToAdd);
+        }
+      } else {
+        // 移除已選產品
+        newSelected.splice(productIndex, 1);
+      }
     }
     
     setSelected(newSelected);
     
     // 調試信息
-    console.log('選擇/取消選擇：', product);
-    console.log('當前選擇清單：', newSelected);
+    console.log('當前選擇清單:', newSelected);
   };
   
   // 處理全選商品規格
