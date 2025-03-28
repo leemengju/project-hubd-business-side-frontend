@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddProductDialog from "./ProductComponents/AddProductDialog";
-// import { 
-//   CalendarIcon, 
-//   TagIcon, 
-// } from "lucide-react";
-
+import { 
+ 
+  ShoppingBagIcon,
+  HouseIcon,
+ 
+} from "lucide-react";
 
 const Products = () => {
   const [editProduct, setEditProduct] = useState(null);
@@ -388,10 +389,10 @@ const Products = () => {
         <div className="flex justify-between items-center">
           <TabsList className="mb-4 bg-gray-100">
             <TabsTrigger value="products" className="flex items-center gap-2 data-[state=active]:bg-brandBlue-normal data-[state=active]:text-white">
-              {/* <TagIcon className="h-4 w-4" /> */}
+              <ShoppingBagIcon className="h-4 w-4" />
               商品管理</TabsTrigger>
             <TabsTrigger value="carousel" className="flex items-center gap-2 data-[state=active]:bg-brandBlue-normal data-[state=active]:text-white">
-              {/* <TagIcon className="h-4 w-4" /> */}
+              <HouseIcon className="h-4 w-4" />
               賣場輪播圖
             </TabsTrigger>
           </TabsList>
