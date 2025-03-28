@@ -6,8 +6,6 @@ import Auth from "../layouts/Auth";
 // Code Splitting，減少JS初次載入大小
 const Member = lazy(() => import("../views/Member"));
 const ProdsAndStore = lazy(() => import("../views/ProdsAndStore"));
-const Products = lazy(() => import("../views/Products"));
-const Store = lazy(() => import("../views/Store"));
 const CashFlow = lazy(() => import("../views/CashFlow"));
 const Marketing = lazy(() => import("../views/Marketing"));
 const Order = lazy(() => import("../views/Order"));
@@ -33,8 +31,6 @@ const AppRouter = () => {
             <Route index element={<Order />} />
             <Route path="order" element={<Order />} />
             <Route path="prods-and-store" element={<ProdsAndStore />} />
-            <Route path="products" element={<Products />} />
-            <Route path="store" element={<Store />} />
             <Route path="cash-flow" element={<CashFlow />} />
             <Route path="member" element={<Member />} />
             <Route path="marketing" element={<Marketing />} />

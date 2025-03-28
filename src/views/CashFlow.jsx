@@ -1311,7 +1311,7 @@ const CashFlow = () => {
           variant="outline" 
           size="sm"
           onClick={prepareCSVData}
-          className="flex items-center gap-1"
+          className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full"
           disabled={isExporting}
         >
           {isExporting ? (

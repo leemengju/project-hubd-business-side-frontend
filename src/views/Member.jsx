@@ -94,7 +94,7 @@ const Member = () => {
             >
               <path
                 fill="none"
-                stroke="currentColor"
+                stroke="#626981"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="30"
@@ -102,14 +102,14 @@ const Member = () => {
               />
               <path
                 fill="none"
-                stroke="currentColor"
+                stroke="#626981"
                 strokeMiterlimit="10"
                 strokeWidth="30"
                 d="M336 304c-65.17 0-127.84 32.37-143.54 95.41c-2.08 8.34 3.15 16.59 11.72 16.59h263.65c8.57 0 13.77-8.25 11.72-16.59C463.85 335.36 401.18 304 336 304Z"
               />
               <path
                 fill="none"
-                stroke="currentColor"
+                stroke="#626981"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="30"
@@ -117,7 +117,7 @@ const Member = () => {
               />
               <path
                 fill="none"
-                stroke="currentColor"
+                stroke="#626981"
                 strokeLinecap="round"
                 strokeMiterlimit="10"
                 strokeWidth="30"
@@ -132,9 +132,9 @@ const Member = () => {
         <CSVLink data={members} headers={headers} filename={"會員資料.csv"}>
           <Button
             variant="outline"
-            className="  bg-brandBlue-normal text-white"
+           className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full"
           >
-            匯出
+            匯出CSV
           </Button>
         </CSVLink>
       </div>

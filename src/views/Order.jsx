@@ -176,7 +176,8 @@ const Order = () => {
   };
 // <-----------------------------------return------------------------------------------>
   return (
-    <React.Fragment>
+    <React.Fragment >
+      <div className="p-6">
       <header className="toolBar flex justify-between items-center py-0">
         <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
           <div className="my-auto w-6 pb-2">
@@ -438,6 +439,7 @@ const Order = () => {
           </div>
         </div>
       )}
+      </div>
     </React.Fragment>
   );
 };
