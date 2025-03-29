@@ -1284,9 +1284,6 @@ const CashFlow = () => {
         </div>
       </div>
       
-      {/* 统计卡片 */}
-      {renderStatsCards()}
-
       {/* 操作按鈕 */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
@@ -1334,6 +1331,9 @@ const CashFlow = () => {
           target="_blank"
         />
       </div>
+
+      {/* 统计卡片 */}
+      {renderStatsCards()}
 
       {/* 使用 Shadcn UI 的 Tabs 元件 */}
       <Tabs 
