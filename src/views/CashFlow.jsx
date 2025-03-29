@@ -1279,7 +1279,6 @@ const CashFlow = () => {
             <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
               金流管理
             </h1>
-            <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
           </div>
         </div>
       </div>
