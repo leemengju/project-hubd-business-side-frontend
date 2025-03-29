@@ -1121,7 +1121,7 @@ const Marketing = () => {
           <Button 
             variant="brand" 
             onClick={handleAdd}
-            className="flex items-center gap-2"
+            className="bg-brandBlue-normal text-white flex items-center gap-2"
             disabled={isLoading}
           >
             <PlusIcon className="h-5 w-5" />
