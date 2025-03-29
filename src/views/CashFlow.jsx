@@ -1307,20 +1307,22 @@ const CashFlow = () => {
           </Button>
         </div>
         
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={prepareCSVData}
-          className="flex items-center gap-1"
-          disabled={isExporting}
-        >
-          {isExporting ? (
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-          ) : (
-            <DownloadIcon className="h-4 w-4" />
-          )}
-          導出CSV
-        </Button>
+        {activeTab !== "settings" && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={prepareCSVData}
+            className="flex items-center gap-1"
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+            ) : (
+              <DownloadIcon className="h-4 w-4" />
+            )}
+            {activeTab === "transactions" ? "匯出每日交易" : "匯出對帳紀錄"}
+          </Button>
+        )}
         
         {/* 隱藏的 CSVLink 組件 */}
         <CSVLink
