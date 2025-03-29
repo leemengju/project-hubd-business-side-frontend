@@ -1300,7 +1300,7 @@ const CashFlow = () => {
             className="flex items-center gap-1"
           >
             <RefreshCwIcon className="h-4 w-4" />
-            刷新數據
+            更新資料
           </Button>
         </div>
         
