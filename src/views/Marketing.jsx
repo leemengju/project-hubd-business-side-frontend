@@ -1087,7 +1087,6 @@ const Marketing = () => {
             行銷管理
           </h1>
         </div>
-        <p className="text-gray-500 mt-2">管理優惠券和行銷活動，提高銷售業績</p>
       </div>
 
       {/* 統計摘要 */}

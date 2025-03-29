@@ -1279,14 +1279,10 @@ const CashFlow = () => {
             <h1 className="text-xl font-lexend font-semibold text-brandBlue-normal">
               金流管理
             </h1>
-            <p className="text-gray-500 mt-2">管理交易記錄和對帳流程，掌握資金動向</p>
           </div>
         </div>
       </div>
       
-      {/* 统计卡片 */}
-      {renderStatsCards()}
-
       {/* 操作按鈕 */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
@@ -1303,24 +1299,26 @@ const CashFlow = () => {
             className="flex items-center gap-1"
           >
             <RefreshCwIcon className="h-4 w-4" />
-            刷新數據
+            更新資料
           </Button>
         </div>
         
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={prepareCSVData}
-          className="px-5 py-2.5 text-sm font-bold text-gray-500 rounded-md border border-solid cursor-pointer border-brandBlue-normal max-sm:w-full"
-          disabled={isExporting}
-        >
-          {isExporting ? (
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-          ) : (
-            <DownloadIcon className="h-4 w-4" />
-          )}
-          導出CSV
-        </Button>
+        {activeTab !== "settings" && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={prepareCSVData}
+            className="flex items-center gap-1"
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+            ) : (
+              <DownloadIcon className="h-4 w-4" />
+            )}
+            {activeTab === "transactions" ? "匯出每日交易" : "匯出對帳紀錄"}
+          </Button>
+        )}
         
         {/* 隱藏的 CSVLink 組件 */}
         <CSVLink
@@ -1332,6 +1330,9 @@ const CashFlow = () => {
           target="_blank"
         />
       </div>
+
+      {/* 统计卡片 */}
+      {renderStatsCards()}
 
       {/* 使用 Shadcn UI 的 Tabs 元件 */}
       <Tabs 
