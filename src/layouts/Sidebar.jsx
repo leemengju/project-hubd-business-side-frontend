@@ -165,7 +165,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-[280px] h-[1040px] p-[30px] bg-brandBlue-light flex flex-col items-center justify-start gap-[24px] rounded-3xl">
+    <div className="w-[280px]  p-[30px]  h-screen bg-brandBlue-light flex flex-col items-center justify-start gap-[24px] rounded-3xl">
       {/* Logo */}
       <Link to="/order" className="mb-5">
         <img src={logo} className="w-[175px]" alt="Logo" />

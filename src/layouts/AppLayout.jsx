@@ -4,7 +4,7 @@ import Heading from "./Heading";
 
 const AppLayout = () => {
   return (
-    <section className="font-lexend w-[1920px] h-[1080px] flex justify-center items-center p-5">
+    <section className="font-lexend w-[1920px] ml-1 h-screen flex justify-center items-start p-5 ">
         <SideBar />
       <section className="w-[1520px] h-[1040px] flex flex-col flex-1 px-5">
         <Heading />
