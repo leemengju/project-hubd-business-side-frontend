@@ -35,7 +35,7 @@ const Member = () => {
   const [orderData, setOrderData] = useState({ totalOrders: 0, totalSpent: 0 }); //訂單數＆消費總金額
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(30); // 修改為 itemsPerPage 變數
+  const [itemsPerPage, setItemsPerPage] = useState(10); // 修改為 itemsPerPage 變數
 
   useEffect(() => {
 
