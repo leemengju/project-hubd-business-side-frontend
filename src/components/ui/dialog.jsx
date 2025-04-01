@@ -6,7 +6,11 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Dialog = DialogPrimitive.Root
+const Dialog = ({ className, ...props }) => (
+  <DialogPrimitive.Root className={cn("transition-colors duration-300", className)} {...props} />
+)
+
+Dialog.displayName = DialogPrimitive.Root.displayName
 
 const DialogTrigger = DialogPrimitive.Trigger
 

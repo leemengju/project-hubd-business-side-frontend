@@ -19,6 +19,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddProductDialog from "./ProductComponents/AddProductDialog";
+import { 
+ 
+  ShoppingBagIcon,
+  HouseIcon,
+ 
+} from "lucide-react";
 
 const Products = () => {
   const [editProduct, setEditProduct] = useState(null);
@@ -27,7 +33,7 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
-  
+
   // 分頁相關狀態
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -42,7 +48,7 @@ const Products = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("獲取的商品數據:", data);
-        
+
         // 確保每個項目都有唯一的id
         const processedData = Array.isArray(data) ? data.map((item, index) => ({
           ...item,
@@ -50,7 +56,7 @@ const Products = () => {
           image: item.image || "https://via.placeholder.com/50",
           status: item.status || "active"
         })) : [];
-        
+
         setProducts(processedData);
         setFilteredProducts(processedData);
         setTotalPages(Math.ceil(processedData.length / itemsPerPage));
@@ -73,9 +79,9 @@ const Products = () => {
 
     // 分類篩選
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(product => 
-        product.classifiction && 
-        product.classifiction[0] && 
+      filtered = filtered.filter(product =>
+        product.classifiction &&
+        product.classifiction[0] &&
         product.classifiction[0].parent_category === selectedCategory
       );
     }
@@ -171,8 +177,8 @@ const Products = () => {
           value.trim() === ""
             ? "請輸入標題"
             : value.length > 15
-            ? "最多15字元"
-            : "",
+              ? "最多15字元"
+              : "",
       };
     } else if (field === "description") {
       newErrors[id] = {
@@ -181,8 +187,8 @@ const Products = () => {
           value.trim() === ""
             ? "請輸入說明"
             : value.length > 65
-            ? "最多65字元"
-            : "",
+              ? "最多65字元"
+              : "",
       };
     } else if (field === "link") {
       newErrors[id] = {
@@ -225,9 +231,9 @@ const Products = () => {
 
         return block.id === id
           ? {
-              ...originalBanner, // 還原原始資料
-              isEditing: false,
-            }
+            ...originalBanner, // 還原原始資料
+            isEditing: false,
+          }
           : block;
       })
     );
@@ -326,16 +332,16 @@ const Products = () => {
       if (response.ok) {
         console.log("狀態更新成功!");
         // 更新本地狀態
-        setProducts(prevProducts => 
-          prevProducts.map(product => 
-            product.product_id === productId 
+        setProducts(prevProducts =>
+          prevProducts.map(product =>
+            product.product_id === productId
               ? { ...product, product_status: newStatus }
               : product
           )
         );
-        setFilteredProducts(prevProducts => 
-          prevProducts.map(product => 
-            product.product_id === productId 
+        setFilteredProducts(prevProducts =>
+          prevProducts.map(product =>
+            product.product_id === productId
               ? { ...product, product_status: newStatus }
               : product
           )
@@ -353,7 +359,7 @@ const Products = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
+        <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
           <svg
             className="inline"
             xmlns="http://www.w3.org/2000/svg"
@@ -362,32 +368,39 @@ const Products = () => {
             viewBox="0 0 24 24"
           >
             <path
-              fill="#252B42"
+              fill="#626981"
               d="M20.6 5.26a2.51 2.51 0 0 0-2.48-2.2H5.885a2.51 2.51 0 0 0-2.48 2.19l-.3 2.47a3.4 3.4 0 0 0 1.16 2.56v8.16a2.5 2.5 0 0 0 2.5 2.5h10.47a2.5 2.5 0 0 0 2.5-2.5v-8.16A3.4 3.4 0 0 0 20.9 7.72Zm-6.59 14.68h-4v-4.08a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5Zm4.73-1.5a1.5 1.5 0 0 1-1.5 1.5h-2.23v-4.08a2.5 2.5 0 0 0-2.5-2.5h-1a2.5 2.5 0 0 0-2.5 2.5v4.08H6.765a1.5 1.5 0 0 1-1.5-1.5v-7.57a3.2 3.2 0 0 0 1.24.24a3.36 3.36 0 0 0 2.58-1.19a.24.24 0 0 1 .34 0a3.36 3.36 0 0 0 2.58 1.19A3.4 3.4 0 0 0 14.6 9.92a.22.22 0 0 1 .16-.07a.24.24 0 0 1 .17.07a3.36 3.36 0 0 0 2.58 1.19a3.2 3.2 0 0 0 1.23-.24Zm-1.23-8.33a2.39 2.39 0 0 1-1.82-.83a1.2 1.2 0 0 0-.92-.43h-.01a1.2 1.2 0 0 0-.92.42a2.476 2.476 0 0 1-3.65 0a1.24 1.24 0 0 0-1.86 0A2.405 2.405 0 0 1 4.1 7.78l.3-2.4a1.52 1.52 0 0 1 1.49-1.32h12.23a1.5 1.5 0 0 1 1.49 1.32l.29 2.36a2.39 2.39 0 0 1-2.395 2.37Z"
+              stroke="#626981"
+              strokeWidth="0.5"
+              strokeLinecap="round"
             />
           </svg>
-          <span className="ml-2 text-brandBlue-darker  text-[20px] font-['Lexend']">
+          <span className="text-xl font-lexend font-semibold text-brandBlue-normal">
             商品＆賣場管理
           </span>
         </div>
-        <AddProductDialog 
-          editProduct={editProduct} 
-          setEditProduct={setEditProduct} 
-          onProductUpdated={fetchProducts}
-        />
+
       </div>
       {/* Tabs 切換選單 */}
+      
+
+
       <Tabs defaultValue="products">
         <div className="flex justify-between items-center">
-          <TabsList className="mb-4">
-            <TabsTrigger value="products">商品管理</TabsTrigger>
-            <TabsTrigger value="carousel">賣場輪播圖</TabsTrigger>
+          <TabsList className="mb-4 bg-gray-100">
+            <TabsTrigger value="products" className="flex items-center gap-2 data-[state=active]:bg-brandBlue-normal data-[state=active]:text-white">
+              <ShoppingBagIcon className="h-4 w-4" />
+              商品管理</TabsTrigger>
+            <TabsTrigger value="carousel" className="flex items-center gap-2 data-[state=active]:bg-brandBlue-normal data-[state=active]:text-white">
+              <HouseIcon className="h-4 w-4" />
+              賣場輪播圖
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="products">
-            {/* 新增商品按鈕 & Drawer */}
             <AddProductDialog
               editProduct={editProduct}
               setEditProduct={setEditProduct}
+              onProductUpdated={fetchProducts}
             />
           </TabsContent>
         </div>
@@ -417,8 +430,8 @@ const Products = () => {
               </SelectContent>
             </Select>
 
-            <Input 
-              placeholder="搜尋商品..." 
+            <Input
+              placeholder="搜尋商品..."
               className="flex-grow"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -445,9 +458,9 @@ const Products = () => {
                     <TableRow key={product.product_id || `row-${index}`}>
                       <TableCell className="truncate">{product.product_id || `未知-${index}`}</TableCell>
                       <TableCell>
-                        <img 
-                          src={`http://localhost:8000/storage/${product.product_img}`} 
-                          alt={product.product_name || "商品"} 
+                        <img
+                          src={`http://localhost:8000/storage/${product.product_img}`}
+                          alt={product.product_name || "商品"}
                           className="w-10 h-10 object-cover"
                           onError={(e) => {
                             if (!e.target.dataset.fallbackAttempted) {
@@ -463,7 +476,7 @@ const Products = () => {
                         {product.specifications && product.specifications.reduce((total, spec) => total + spec.product_stock, 0)}
                       </TableCell>
                       <TableCell>
-                        <Select 
+                        <Select
                           defaultValue={product.product_status || "active"}
                           onValueChange={(value) => handleStatusChange(product.product_id, value)}
                         >
@@ -486,7 +499,7 @@ const Products = () => {
                             let specificationInfo = "";
                             let shippingInfo = "";
                             let additionalInfo = "";
-                            
+
                             if (product.information && Array.isArray(product.information)) {
                               product.information.forEach(info => {
                                 if (info.title === '材質') materialInfo = info.content || "";
@@ -495,7 +508,7 @@ const Products = () => {
                                 if (info.title === '其他補充') additionalInfo = info.content || "";
                               });
                             }
-                            
+
                             const productToEdit = {
                               ...product,
                               name: product.product_name,
@@ -539,8 +552,8 @@ const Products = () => {
           <div className="flex justify-center items-center gap-4 mt-4">
             <div className="flex items-center gap-2">
               <span>每頁顯示：</span>
-              <Select 
-                value={itemsPerPage.toString()} 
+              <Select
+                value={itemsPerPage.toString()}
                 onValueChange={(value) => {
                   setItemsPerPage(Number(value));
                   setCurrentPage(1);
@@ -557,7 +570,7 @@ const Products = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -566,7 +579,7 @@ const Products = () => {
               >
                 上一頁
               </Button>
-              
+
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <Button
                   key={page}
@@ -577,7 +590,7 @@ const Products = () => {
                   {page}
                 </Button>
               ))}
-              
+
               <Button
                 variant="outline"
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}

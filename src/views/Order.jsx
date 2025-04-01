@@ -5,7 +5,6 @@ import { utils, writeFile } from "xlsx";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -51,7 +50,11 @@ const Order = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
   const popupRef = useRef(null);
-  const [date, setDate] = React.useState(null);
+  
+  // 新增分頁相關狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // <---------------------------調資料呈現在畫面----------------------->
   useEffect(() => {
@@ -60,12 +63,13 @@ const Order = () => {
         const result = await axios.get("http://localhost:8000/api/order");
         setOrderList(result.data);
         setFilteredOrders(result.data);
+        setTotalPages(Math.ceil(result.data.length / itemsPerPage));
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
     };
     fetchOrders();
-  }, []);
+  }, [itemsPerPage]);
 
   // <---------------------------調資料呈現在popup----------------------->
   useEffect(() => {
@@ -130,9 +134,15 @@ const Order = () => {
     setFilteredOrders([...filtered]);
     console.log(filteredOrders);
 
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    setCurrentPage(1); // 重置到第一頁
   };
 
-
+  // 計算當前頁的訂單
+  const currentOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // <-----------------------------------function，open&closepopup------------------------------------------>
   const openPopup = (order) => {
@@ -166,7 +176,8 @@ const Order = () => {
   };
 // <-----------------------------------return------------------------------------------>
   return (
-    <React.Fragment>
+    <React.Fragment >
+      <div className="p-6">
       <header className="toolBar flex justify-between items-center py-0">
         <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
           <div className="my-auto w-6 pb-2">
@@ -294,100 +305,111 @@ const Order = () => {
       </section>
       {/* <!-- Table Header --> */}
 
-      <div className="table w-full mt-5 bg-white rounded-lg border border-solid border-[#D9D9D9]">
-        <Table >
-          <TableRow>
-            {/* <header className="w-[1200] grid p-4 border-b border-solid bg-zinc-50 border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"> */}
-            <TableHeader className="w-[1200] grid px-4 pt-3 border-b border-solid bg-gray-200  grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]">
-              <TableHead >
-                訂單編號
-              </TableHead>
-              <TableHead >
-                交易編號
-              </TableHead>
-              <TableHead >
-                交易時間
-              </TableHead>
-              <TableHead >
-                買家ID
-              </TableHead>
-              <TableHead >
-                訂單金額
-              </TableHead>
-              <TableHead >
-                付款方式
-              </TableHead>
-              <TableHead>
-                狀態
-              </TableHead>
-              <TableHead className="ml-[32px]">
-                操作
-              </TableHead>
-            </TableHeader>
-          </TableRow>
-          {/* <!-- Table Row --> */}
-          <TableRow>
-            {filteredOrders.map((orderData) => (
-              <TableBody
-                key={orderData.order_id}
-                className="grid px-4 py-2 border-b border-solid border-b-[#E4E4E4] grid-cols-[2fr_2fr_2fr_1fr_1fr_1fr_1fr_1fr] max-md:gap-2.5 max-md:grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr]"
-              >
-                <TableCell>
-                  {orderData.order_id}
-                </TableCell>
-                <TableCell>
-                  {orderData.trade_No}
-                </TableCell>
-                <TableCell>
-                  {orderData.trade_Date}
-                </TableCell>
-                <TableCell>
-                  {orderData.id}
-                </TableCell>
-                <TableCell>
-                  {orderData.total_price_with_discount}
-                </TableCell>
-                <TableCell>
-                  {orderData.payment_type}
-                </TableCell>
-                <TableCell >
-                  {orderData.trade_status}
-                </TableCell>
-                <TableCell className=" ml-[32px]">
-                  <button onClick={() => openPopup(orderData)} className="cursor-pointer " aria-label="View order details">
-                    <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="action-icon">
-                      <path d="M21.1303 10.253C22.2899 11.4731 22.2899 13.3267 21.1303 14.5468C19.1745 16.6046 15.8155 19.3999 12 19.3999C8.18448 19.3999 4.82549 16.6046 2.86971 14.5468C1.7101 13.3267 1.7101 11.4731 2.86971 10.253C4.82549 8.19524 8.18448 5.3999 12 5.3999C15.8155 5.3999 19.1745 8.19523 21.1303 10.253Z" stroke="#484848" strokeWidth="1.5"></path>
-                      <path d="M15 12.3999C15 14.0568 13.6569 15.3999 12 15.3999C10.3431 15.3999 9 14.0568 9 12.3999C9 10.743 10.3431 9.3999 12 9.3999C13.6569 9.3999 15 10.743 15 12.3999Z" stroke="#484848" strokeWidth="1.5"></path>
-                    </svg>
-                  </button>
-                </TableCell>
-
-              </TableBody>
-            ))}
-          </TableRow>
-          {/* <!-- Table Footer --> */}
-          <footer className="flex justify-between items-center p-4 bg-slate-50 max-sm:flex-col max-sm:gap-5">
-            <select className="cursor-pointer flex gap-2 items-center px-4 py-2 text-sm bg-white rounded-lg border border-solid border-[#D9D9D9] text-neutral-600">
-              <option value="">顯示20筆</option>
-              <option value="">顯示50筆</option>
-              <option value="">顯示100筆</option>
-            </select>
-            <nav className="flex gap-2 items-center max-sm:justify-center max-sm:w-full" aria-label="Pagination">
-              <button aria-label="Previous page">
-                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="page-nav">
-                  <path d="M15.09 18.3999L16.5 16.9899L11.92 12.3999L16.5 7.8099L15.09 6.3999L9.09 12.3999L15.09 18.3999Z" fill="#626981"></path>
-                </svg>
-              </button>
-              <span className="text-sm text-neutral-500">1/10</span>
-              <button aria-label="Next page">
-                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="page-nav">
-                  <path d="M10.41 6.3999L9 7.8099L13.58 12.3999L9 16.9899L10.41 18.3999L16.41 12.3999L10.41 6.3999Z" fill="#626981"></path>
-                </svg>
-              </button>
-            </nav>
-          </footer>
+      <div className=" w-full mt-5 bg-white rounded-lg border border-solid border-[#D9D9D9]">
+        <Table className="w-full table-fixed">
+          <TableHeader className="bg-gray-200">
+            <TableRow>
+              <TableHead className="w-[150px]">訂單編號</TableHead>
+              <TableHead className="w-[150px]">交易編號</TableHead>
+              <TableHead className="w-[150px]">交易時間</TableHead>
+              <TableHead className="w-[100px]">買家ID</TableHead>
+              <TableHead className="w-[100px]">訂單金額</TableHead>
+              <TableHead className="w-[100px]">付款方式</TableHead>
+              <TableHead className="w-[100px]">狀態</TableHead>
+              <TableHead className="w-[100px] text-center">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {currentOrders && currentOrders.length > 0 ? (
+              currentOrders.map((orderData) => (
+                <TableRow key={orderData.order_id || `row-${orderData.id}`}>
+                  <TableCell className="truncate">{orderData.order_id}</TableCell>
+                  <TableCell className="truncate">{orderData.trade_No}</TableCell>
+                  <TableCell>{orderData.trade_Date}</TableCell>
+                  <TableCell>{orderData.id}</TableCell>
+                  <TableCell>{orderData.total_price_with_discount}</TableCell>
+                  <TableCell>{orderData.payment_type}</TableCell>
+                  <TableCell>{orderData.trade_status}</TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openPopup(orderData)}
+                      aria-label="View order details"
+                    >
+                      <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21.1303 10.253C22.2899 11.4731 22.2899 13.3267 21.1303 14.5468C19.1745 16.6046 15.8155 19.3999 12 19.3999C8.18448 19.3999 4.82549 16.6046 2.86971 14.5468C1.7101 13.3267 1.7101 11.4731 2.86971 10.253C4.82549 8.19524 8.18448 5.3999 12 5.3999C15.8155 5.3999 19.1745 8.19523 21.1303 10.253Z" stroke="#484848" strokeWidth="1.5"></path>
+                        <path d="M15 12.3999C15 14.0568 13.6569 15.3999 12 15.3999C10.3431 15.3999 9 14.0568 9 12.3999C9 10.743 10.3431 9.3999 12 9.3999C13.6569 9.3999 15 10.743 15 12.3999Z" stroke="#484848" strokeWidth="1.5"></path>
+                      </svg>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-4">暫無訂單數據</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
         </Table>
+        
+        
       </div>
+      {/* 分頁控制 */}
+      <div className="flex justify-center items-center gap-4 mt-4">
+          
+          <div className="flex justify-center items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span>每頁顯示：</span>
+              <Select 
+                value={itemsPerPage.toString()} 
+                onValueChange={(value) => {
+                  setItemsPerPage(Number(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="選擇數量" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5筆</SelectItem>
+                  <SelectItem value="10">10筆</SelectItem>
+                  <SelectItem value="20">20筆</SelectItem>
+                  <SelectItem value="50">50筆</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                上一頁
+              </Button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
+                  className="min-w-[40px]"
+                >
+                  {page}
+                </Button>
+              ))}
+              
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                下一頁
+              </Button>
+            </div>
+          </div>
+        </div>
 
       {/* Popup */}
       {isPopupOpen && selectedOrder && (
@@ -417,6 +439,7 @@ const Order = () => {
           </div>
         </div>
       )}
+      </div>
     </React.Fragment>
   );
 };

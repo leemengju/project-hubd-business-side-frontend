@@ -34,6 +34,7 @@ const Setting = () => {
   // <-----------------------------------return------------------------------------------>
   return (
     <React.Fragment>
+      <div className="p-6">
       <header className="toolBar flex justify-start items-center py-0">
         <div className="box-border flex relative flex-row shrink-0 gap-2 my-auto">
           <div className="my-auto w-6 pb-2">
@@ -174,6 +175,7 @@ const Setting = () => {
           </div>
 
         )}
+        {/* button_group */}
         <div className="flex flex-row gap-[12px]">
         <Button
           type="button"
@@ -189,9 +191,11 @@ const Setting = () => {
               axios.delete("http://localhost:8000/api/maintenance")
                 .then(res => {
                   console.log("維護資料已清空");
+                  alert("維護資料已清空");
                 })
                 .catch(err => {
                   console.error("清空資料失敗:", err);
+                  alert("儲存資料失敗:", err);
                 });
             }
           }}
@@ -217,17 +221,21 @@ const Setting = () => {
               })
                 .then(res => {
                   console.log("維護資料已儲存");
+                  alert("維護資料已儲存");
                 })
                 .catch(err => {
                   console.error("儲存資料失敗:", err);
+                  alert("儲存資料失敗:", err);
                 });
             } else {
               axios.delete("http://localhost:8000/api/maintenance")
                 .then(res => {
                   console.log("維護資料已清空");
+                  alert("維護資料已清空");
                 })
                 .catch(err => {
                   console.error("清空資料失敗:", err);
+                  alert("儲存資料失敗:", err);
                 });
             }
           }}
@@ -236,8 +244,12 @@ const Setting = () => {
           確定
         </Button>
         </div>
+      
         
       </section>
+
+      </div>
+      {/* end of UI system */}
 
 
 
