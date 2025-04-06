@@ -1,5 +1,5 @@
 import testImg from "../assets/images/home_test.png";
-import lanceImg from "../assets/images/Lance_IDphoto.jpg";
+import lanceImg from "../assets/images/Avatar_Lance.svg";
 
 const Heading = () => {
   return (
@@ -25,9 +25,9 @@ const Heading = () => {
         <div className="flex items-center border-2 rounded-lg py-2 px-5">
           <div className="w-[50px] h-[50px] rounded-lg">
              {/* 行銷專員版本 */}
-            {/* <img src={testImg} className="w-full h-full object-cover" alt="avatar" /> */}
+            {/* <img src={testImg} className="w-full h-full object-cover rounded-sm" alt="avatar" /> */}
             {/* 業務經理版本 */}
-            <img src={lanceImg} className="w-full h-full object-cover" alt="avatar" />
+            <img src={lanceImg} className="w-full h-full object-cover rounded-sm" alt="avatar" />
           </div>
           <div className="ms-[10px]">
             {/* 行銷專員版本 */}
