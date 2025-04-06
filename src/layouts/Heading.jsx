@@ -1,4 +1,5 @@
 import testImg from "../assets/images/home_test.png";
+import lanceImg from "../assets/images/Lance_IDphoto.jpg";
 
 const Heading = () => {
   return (
@@ -6,7 +7,11 @@ const Heading = () => {
       <div className="flex items-center">
         <div className="flex flex-col justify-center items-start w-[210px]">
           <p className="font-semibold text-[20px]">
-            Hello, <span>Robert</span>
+            {/* Hello, <span>Robert</span> */}
+            {/* 行銷專員版本 */}
+            {/* Hello, <span>Daniel</span> */}
+            {/* 業務經理版本 */}
+            Hello, <span>Lance</span>
           </p>
           <p className="text-[14px] text-brandGray-normalLight">歡迎回來</p>
         </div>
@@ -19,11 +24,18 @@ const Heading = () => {
         </div>
         <div className="flex items-center border-2 rounded-lg py-2 px-5">
           <div className="w-[50px] h-[50px] rounded-lg">
-            <img src={testImg} className="w-full h-full object-cover" alt="avatar" />
+             {/* 行銷專員版本 */}
+            {/* <img src={testImg} className="w-full h-full object-cover" alt="avatar" /> */}
+            {/* 業務經理版本 */}
+            <img src={lanceImg} className="w-full h-full object-cover" alt="avatar" />
           </div>
           <div className="ms-[10px]">
-            <p className="font-semibold text-[20px]">Robert Allen</p>
-            <p className="text-[14px] text-brandGray-normalLight">CEO</p>
+            {/* 行銷專員版本 */}
+            {/* <p className="font-semibold text-[20px]">Daniel</p>
+            <p className="text-[14px] text-brandGray-normalLight">Marketing Specialist</p> */}
+            {/* 業務經理版本 */}
+            <p className="font-semibold text-[20px]">Lance Lee</p>
+            <p className="text-[14px] text-brandGray-normalLight">Selling Manager</p>
           </div>
         </div>
       </div>

@@ -56,14 +56,19 @@ const Order = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // 新增訂單詳細資料
+  const [orderDetail, setOrderDetail] = useState([]);
   // <---------------------------調資料呈現在畫面----------------------->
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const result = await axios.get("http://localhost:8000/api/order");
-        setOrderList(result.data);
-        setFilteredOrders(result.data);
-        setTotalPages(Math.ceil(result.data.length / itemsPerPage));
+        // const result = await axios.get("http://localhost:8000/api/order");
+        const result = await axios.get("http://localhost:8000/api/orderWithDetails");
+        console.log(result);
+        
+        setOrderList(result.data.order_main);
+        setFilteredOrders(result.data.order_main);
+        setTotalPages(Math.ceil(result.data.order_main.length / itemsPerPage));
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -158,6 +163,17 @@ const Order = () => {
     setOrderDetails([]);
   };
   // <-----------------------------------匯出csv和excel------------------------------------------>
+ 
+  // 新增訂單詳細資料
+  const storedOrderDetail = (format)=>{
+    for (let i = 0; i < filteredOrders.length; i++) {
+    filteredOrders[i].order_detail;
+    
+  } 
+  console.log(filteredOrders[i].order_detail);
+  
+  
+ }
   const handleExport = (format) => {
     if (filteredOrders.length === 0) {
       console.error("No data available to export");
